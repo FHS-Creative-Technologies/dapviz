@@ -1,0 +1,20 @@
+{
+  "name": "dapviz",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently --kill-others npm:dev:*",
+    "dev:js": "vite",
+    "dev:rust": "cargo watch -C src-backend/ -- cargo run -- -a 127.0.0.1 -p 8080",
+    "build": "npm run build:js && npm run build:rust",
+    "build:js": "tsc && vite build",
+    "build:rust": "cargo build --release --manifest-path src-backend/Cargo.toml"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.5.3",
+    "vite": "^5.4.1",
+    "vite-plugin-singlefile": "^2.0.2"
+  }
+}
