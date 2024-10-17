@@ -68,7 +68,7 @@ fn build_app() -> Router<AppState> {
 }
 
 fn build_api() -> Router<AppState> {
-    Router::new().route("events", get(initialize_events_websocket))
+    Router::new().route("/events", get(initialize_events_websocket))
 }
 
 async fn initialize_events_websocket(
