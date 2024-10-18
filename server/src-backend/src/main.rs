@@ -1,4 +1,4 @@
-use std::{error::Error, io::Read as _, net::Ipv4Addr, sync::Arc, time::Duration};
+use std::{error::Error, io::Read as _, net::Ipv4Addr, sync::Arc};
 
 use axum::{
     extract::{
@@ -15,6 +15,7 @@ use clap::Parser as _;
 use tokio::{
     io::{AsyncReadExt as _, AsyncWriteExt as _},
     net::{TcpListener, TcpStream, ToSocketAddrs},
+    sync::RwLock,
 };
 
 #[derive(clap::Parser)]
@@ -35,14 +36,16 @@ struct Args {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
-    let (tx, rx) = tokio::sync::mpsc::channel::<()>(1024);
-
     tracing_subscriber::fmt().init();
 
     let listener = TcpListener::bind((args.address, args.port)).await?;
 
+    let dap_messages = Arc::new(RwLock::new(Vec::new()));
+    let dap_notify = Arc::new(tokio::sync::Notify::new());
+
     let state = AppState {
-        dap_receiver: Arc::new(rx),
+        dap_messages: Arc::clone(&dap_messages),
+        dap_notify: Arc::clone(&dap_notify),
     };
 
     let app = build_app().with_state(state);
@@ -50,15 +53,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing::info!("Server started on {}", listener.local_addr()?);
 
     // do these things concurrently
-    tokio::spawn(async move { start_dap_proxy(tx).await.expect("dap proxy failed :(") });
+    tokio::spawn(async move {
+        start_dap_proxy(dap_messages, dap_notify)
+            .await
+            .expect("dap proxy failed :(")
+    });
     axum::serve(listener, app).await?;
 
     Ok(())
 }
 
+type DapMessages = Arc<RwLock<Vec<DapEvent>>>;
+
 #[derive(Clone)]
 struct AppState {
-    dap_receiver: Arc<tokio::sync::mpsc::Receiver<()>>,
+    dap_messages: DapMessages,
+    dap_notify: Arc<tokio::sync::Notify>,
 }
 
 fn build_app() -> Router<AppState> {
@@ -75,12 +85,39 @@ async fn initialize_events_websocket(
     ws: WebSocketUpgrade,
     State(state): State<AppState>,
 ) -> impl IntoResponse {
-    ws.on_upgrade(move |socket| handle_socket(socket, state.dap_receiver))
+    ws.on_upgrade(move |socket| {
+        handle_socket(
+            socket,
+            Arc::clone(&state.dap_messages),
+            Arc::clone(&state.dap_notify),
+        )
+    })
 }
 
-async fn handle_socket(mut socket: WebSocket, _rx: Arc<tokio::sync::mpsc::Receiver<()>>) {
-    while socket.send(Message::Text("Hello!".into())).await.is_ok() {
-        tokio::time::sleep(Duration::from_secs(1)).await;
+async fn handle_socket(
+    mut socket: WebSocket,
+    messages: DapMessages,
+    notify: Arc<tokio::sync::Notify>,
+) {
+    let mut last_message = 0;
+
+    loop {
+        let all_messages = messages.read().await;
+
+        for message in all_messages[last_message..].iter() {
+            let text = match message {
+                DapEvent::Client(val) => val.to_owned(),
+                DapEvent::Server(val) => val.to_owned(),
+            };
+
+            if socket.send(Message::Text(text)).await.is_err() {
+                break;
+            }
+
+            last_message += 1;
+        }
+
+        notify.notified().await;
     }
 }
 
@@ -96,7 +133,10 @@ async fn get_index() -> Result<impl IntoResponse, StatusCode> {
     Ok(Html(include_str!("../../dist/index.html")))
 }
 
-async fn start_dap_proxy(tx: tokio::sync::mpsc::Sender<()>) -> Result<(), Box<dyn Error>> {
+async fn start_dap_proxy(
+    dap_messages: DapMessages,
+    dap_notify: Arc<tokio::sync::Notify>,
+) -> Result<(), Box<dyn Error>> {
     let editor_port = 4711;
     let dap_port = 4712;
 
@@ -119,9 +159,11 @@ async fn start_dap_proxy(tx: tokio::sync::mpsc::Sender<()>) -> Result<(), Box<dy
     while let Ok((connection, addr)) = listener.accept().await {
         tracing::info!("New connection from {}", addr);
 
-        let tx = tx.clone();
+        let dap_messages = Arc::clone(&dap_messages);
+        let dap_notify = Arc::clone(&dap_notify);
+
         tokio::spawn(async move {
-            match handle_connection(connection, dap_address, tx).await {
+            match handle_connection(connection, dap_address, dap_messages, dap_notify).await {
                 Ok(_) => (),
                 Err(err) => {
                     tracing::info!("Connection closed: {}", err);
@@ -132,8 +174,6 @@ async fn start_dap_proxy(tx: tokio::sync::mpsc::Sender<()>) -> Result<(), Box<dy
 
     Ok(())
 }
-
-/*
 
 #[derive(Debug)]
 enum DapEvent {
@@ -150,12 +190,11 @@ impl std::fmt::Display for DapEvent {
     }
 }
 
-*/
-
 async fn handle_connection(
     mut connection: TcpStream,
     dap_address: impl ToSocketAddrs,
-    tx: tokio::sync::mpsc::Sender<()>,
+    dap_messages: DapMessages,
+    dap_notify: Arc<tokio::sync::Notify>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut dap_server = TcpStream::connect(dap_address).await?;
 
@@ -180,8 +219,9 @@ async fn handle_connection(
 
                     match std::str::from_utf8(&message) {
                         Ok(msg) => {
-                            let (_header, _message) = msg.split_once("\r\n").unwrap();
-                            tx.send(()).await?;
+                            let (_header, message) = msg.split_once("\r\n").unwrap();
+                            dap_messages.write().await.push(DapEvent::Client(message.into()));
+                            dap_notify.notify_waiters();
                         },
                         Err(err) => tracing::warn!("Invalid UTF-8: {}", err),
                     };
@@ -203,8 +243,9 @@ async fn handle_connection(
 
                     match std::str::from_utf8(&message) {
                         Ok(msg) => {
-                            let (_header, _json) = msg.split_once("\r\n").unwrap();
-                            tx.send(()).await?;
+                            let (_header, message) = msg.split_once("\r\n").unwrap();
+                            dap_messages.write().await.push(DapEvent::Server(message.into()));
+                            dap_notify.notify_waiters();
                         },
                         Err(err) => tracing::warn!("Invalid UTF-8: {}", err),
                     };
