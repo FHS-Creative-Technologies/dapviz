@@ -7,5 +7,9 @@ ws.addEventListener("open", (_e) => {
 })
 
 ws.addEventListener("message", (e) => {
-  console.log("msg from ws: ", e.data);
+  try {
+    console.log(JSON.parse(e.data));
+  } catch (err) {
+    console.error("Invalid JSON:", e.data, err);
+  }
 });
