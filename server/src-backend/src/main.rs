@@ -15,6 +15,7 @@ use clap::Parser as _;
 use tokio::{
     io::{AsyncReadExt as _, AsyncWriteExt as _},
     net::{TcpListener, TcpStream, ToSocketAddrs},
+    process::Command,
     sync::RwLock,
 };
 
@@ -50,7 +51,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let app = build_app().with_state(state);
 
-    tracing::info!("Server started on {}", listener.local_addr()?);
+    tracing::info!("Server started on http://{}", listener.local_addr()?);
 
     // do these things concurrently
     tokio::spawn(async move {
@@ -140,15 +141,18 @@ async fn start_dap_proxy(
     let editor_port = 4711;
     let dap_port = 4712;
 
-    // TODO: actually start dap server
-    //
-    // let vsdbg_executable = "/Users/thekatze/.vscode/extensions/ms-dotnettools.csharp-2.50.27-darwin-arm64/.debugger/arm64/vsdbg-ui";
-    // let mut debugger = Command::new(vsdbg_executable)
-    //     .args(&[format!("--server={dap_port}")])
-    //     .kill_on_drop(true)
-    //     .spawn()?;
-    //
-    // debugger.kill().await?;
+    let dap_executable = "/Users/thekatze/.vscode/extensions/ms-dotnettools.csharp-2.50.27-darwin-arm64/.debugger/arm64/vsdbg-ui";
+
+    // NOTE: this doesnt work with the csharp vscode extension. check if theres a netcoredbg
+    // extension. The server seems to be unable to parse an editor request. Maybe netcoredbg cant
+    // handle two JSONs in one request?
+
+    // let dap_executable = "/usr/local/netcoredbg";
+
+    let mut debugger = Command::new(dap_executable)
+        .args(["--interpreter=vscode", &format!("--server={dap_port}")])
+        .kill_on_drop(true)
+        .spawn()?;
 
     let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, editor_port)).await?;
     let dap_address = (Ipv4Addr::LOCALHOST, dap_port);
@@ -156,21 +160,25 @@ async fn start_dap_proxy(
     tracing::info!("DAP Server is running on port {}", dap_port);
     tracing::info!("Listening for DAP messages on port {}", editor_port);
 
-    while let Ok((connection, addr)) = listener.accept().await {
-        tracing::info!("New connection from {}", addr);
+    while let Ok((editor_connection, addr)) = listener.accept().await {
+        tracing::info!("New editor connection from {}", addr);
 
-        let dap_messages = Arc::clone(&dap_messages);
-        let dap_notify = Arc::clone(&dap_notify);
+        handle_connection(
+            editor_connection,
+            dap_address,
+            Arc::clone(&dap_messages),
+            Arc::clone(&dap_notify),
+        )
+        .await
+        .inspect_err(|err| {
+            tracing::error!("Connection closed with error: {}", err);
+        })?;
 
-        tokio::spawn(async move {
-            match handle_connection(connection, dap_address, dap_messages, dap_notify).await {
-                Ok(_) => (),
-                Err(err) => {
-                    tracing::info!("Connection closed: {}", err);
-                }
-            }
-        });
+        // when the editor connection closes, clear the message history
+        dap_messages.write().await.clear();
     }
+
+    debugger.kill().await?;
 
     Ok(())
 }
@@ -191,14 +199,14 @@ impl std::fmt::Display for DapEvent {
 }
 
 async fn handle_connection(
-    mut connection: TcpStream,
+    mut editor_connection: TcpStream,
     dap_address: impl ToSocketAddrs,
     dap_messages: DapMessages,
     dap_notify: Arc<tokio::sync::Notify>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut dap_server = TcpStream::connect(dap_address).await?;
 
-    let (mut client_recv, mut client_send) = connection.split();
+    let (mut editor_recv, mut editor_send) = editor_connection.split();
     let (mut server_recv, mut server_send) = dap_server.split();
 
     let mut client_buffer = BytesMut::with_capacity(65536);
@@ -206,7 +214,7 @@ async fn handle_connection(
 
     loop {
         tokio::select! {
-            bytes = client_recv.read_buf(&mut client_buffer) => {
+            bytes = editor_recv.read_buf(&mut client_buffer) => {
             match bytes {
                 Ok(0) => {
                     tracing::warn!("Client connection closed");
@@ -220,6 +228,7 @@ async fn handle_connection(
                     match std::str::from_utf8(&message) {
                         Ok(msg) => {
                             let (_header, message) = msg.split_once("\r\n").unwrap();
+                            tracing::info!("client: {}", message);
                             dap_messages.write().await.push(DapEvent::Client(message.into()));
                             dap_notify.notify_waiters();
                         },
@@ -238,12 +247,13 @@ async fn handle_connection(
                     break;
                 }
                 Ok(bytes) => {
-                    client_send.write_all(&server_buffer[..bytes]).await?;
+                    editor_send.write_all(&server_buffer[..bytes]).await?;
                     let message = server_buffer.bytes().collect::<Result<Vec<u8>, _>>()?;
 
                     match std::str::from_utf8(&message) {
                         Ok(msg) => {
                             let (_header, message) = msg.split_once("\r\n").unwrap();
+                            tracing::info!("server: {}", message);
                             dap_messages.write().await.push(DapEvent::Server(message.into()));
                             dap_notify.notify_waiters();
                         },
