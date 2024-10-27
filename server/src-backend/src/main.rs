@@ -103,12 +103,16 @@ async fn handle_socket(
     let mut last_message = 0;
 
     loop {
-        let all_messages = messages.read().await;
+        // clone new messages into a vec, so we can drop the rwlock as fast as possible
+        let new_messages = {
+            let all_messages = messages.read().await;
+            all_messages[last_message..].to_vec()
+        };
 
-        for message in all_messages[last_message..].iter() {
+        for message in new_messages {
             let text = match message {
-                DapEvent::Client(val) => val.to_owned(),
-                DapEvent::Server(val) => val.to_owned(),
+                DapEvent::Client(val) => val,
+                DapEvent::Server(val) => val,
             };
 
             if socket.send(Message::Text(text)).await.is_err() {
@@ -183,7 +187,7 @@ async fn start_dap_proxy(
     Ok(())
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 enum DapEvent {
     Client(String),
     Server(String),
@@ -227,7 +231,7 @@ async fn handle_connection(
 
                     match std::str::from_utf8(&message) {
                         Ok(msg) => {
-                            let (_header, message) = msg.split_once("\r\n").unwrap();
+                            let (_header, message) = msg.split_once("\r\n").unwrap(); // BUG: sometimes panics here
                             tracing::info!("client: {}", message);
                             dap_messages.write().await.push(DapEvent::Client(message.into()));
                             dap_notify.notify_waiters();
@@ -252,7 +256,7 @@ async fn handle_connection(
 
                     match std::str::from_utf8(&message) {
                         Ok(msg) => {
-                            let (_header, message) = msg.split_once("\r\n").unwrap();
+                            let (_header, message) = msg.split_once("\r\n").unwrap(); // BUG: sometimes panics here
                             tracing::info!("server: {}", message);
                             dap_messages.write().await.push(DapEvent::Server(message.into()));
                             dap_notify.notify_waiters();
