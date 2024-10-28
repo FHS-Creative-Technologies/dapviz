@@ -1,5 +1,3 @@
-import './style.css'
-
 const ws = new WebSocket(`ws://${location.host}/api/events`);
 
 ws.addEventListener("open", (_e) => {
