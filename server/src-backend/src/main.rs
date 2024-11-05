@@ -145,7 +145,9 @@ async fn start_dap_proxy(
     let editor_port = 4711;
     let dap_port = 4712;
 
-    let dap_executable = "/Users/thekatze/.vscode/extensions/ms-dotnettools.csharp-2.50.27-darwin-arm64/.debugger/arm64/vsdbg-ui";
+    // let dap_executable = "/Users/thekatze/.vscode/extensions/ms-dotnettools.csharp-2.50.27-darwin-arm64/.debugger/arm64/vsdbg-ui";
+    let dap_executable =
+        "/home/mat/.vscode/extensions/ms-dotnettools.csharp-2.50.27-linux-x64/.debugger/vsdbg-ui";
 
     // NOTE: this doesnt work with the csharp vscode extension. check if theres a netcoredbg
     // extension. The server seems to be unable to parse an editor request. Maybe netcoredbg cant
