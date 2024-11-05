@@ -4,31 +4,52 @@ interface Variable {
   name: string;
   value: string;
   type: string;
-  variablesReference: number; // do we need this?
-  memoryReference?: string; // do we need this?
+  variablesReference: number;
+  memoryReference?: string;
 }
 
-// TODO: handle heap data somehow
+interface HeapObject {
+  variable: Variable;
+  children?: Map<string, HeapObject>;
+}
+
 const variablesData = {
   stack: [] as Variable[],
-  // heap: new Map<string, Variable>()
+  heap: new Map<string, HeapObject>()
 }
 
 function storeVariables(variables: Variable[]) {
+
   variables.forEach(variable => {
+
+    if (variable.name.startsWith("args")) return;
+
+
     if (isStackVariable(variable)) {
       variablesData.stack.push(variable);
-    } else {
-      // handle heap data
-      // variablesData.heap.set(variable.name, variable);
+    } else if (isHeapVariable(variable)) {
+      const heapObj: HeapObject = {
+        variable,
+        children: new Map()
+      }
+
+      const key = variable.memoryReference || variable.name;
+      variablesData.heap.set(key, heapObj);
     }
   })
 }
 
-// TODO: maybe there is a way to check with memoryRef oder varRef
 function isStackVariable(variable: Variable): boolean {
   return variable.type === "int" || variable.type === "float"
-    || variable.type === "char" || variable.type === "double";
+    || variable.type === "char" || variable.type === "double"
+    || variable.type === "bool";
+}
+
+function isHeapVariable(variable: Variable): boolean {
+  return (variable.memoryReference !== undefined &&
+    variable.memoryReference !== "0x0000000000000000") ||
+    variable.variablesReference > 0;
+
 }
 
 ws.addEventListener("open", (_e) => {
@@ -42,12 +63,13 @@ ws.addEventListener("message", (e) => {
     if (data.type === "response" && data.command === "variables" && data.success) {
 
       const variables = data.body.variables as Variable[];
-      console.log(`received: ${variables}`);
 
+      variablesData.stack = [];
+      variablesData.heap.clear();
       storeVariables(variables);
 
       console.log("Stack Variables:", variablesData.stack);
-      // console.log("Heap Variables:", Array.from(variablesData.heap.entries()));
+      console.log("Heap Objects:", Array.from(variablesData.heap.entries()));
 
     }
 
