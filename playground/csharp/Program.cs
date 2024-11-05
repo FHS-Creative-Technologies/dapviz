@@ -1,41 +1,57 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
-int a = 32;
+int a;
 int b = 44;
-float c = 32.0f;
+float c = 32.4f;
 double d = 420.69;
+bool isThisBool = true;
 
-var mat = new Matrix() {
-    Row0 = new Vector{
+int test(int a, int b)
+{
+    return a + b;
+}
+
+a = 43;
+int e = test(a, b);
+
+var mat = new Matrix()
+{
+    Row0 = new Vector
+    {
         X = 0,
         Y = 0,
         Z = 0,
     },
-    Row1 = new Vector{
+    Row1 = new Vector
+    {
         X = 0,
         Y = 0,
         Z = 0,
     },
-    Row2 = new Vector{
+    Row2 = new Vector
+    {
         X = 0,
         Y = 0,
         Z = 0,
     },
 };
 
-for (int i = 0; i < 10; ++i) {
+for (int i = 0; i < 10; ++i)
+{
     Console.Write(i);
 }
 
 Console.WriteLine("Hello, World");
 
-class Vector {
-    public int X{get; init; }
-    public int Y{get; init; }
-    public int Z {get; init; }
+class Vector
+{
+    public int X { get; init; }
+    public int Y { get; init; }
+    public int Z { get; init; }
 }
-class Matrix {
-    public required Vector Row0 {get; init;}
-    public required Vector Row1{get; init;}
-    public required Vector Row2{get; init;}
+class Matrix
+{
+    public required Vector Row0 { get; init; }
+    public required Vector Row1 { get; init; }
+    public required Vector Row2 { get; init; }
 }
