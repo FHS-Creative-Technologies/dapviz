@@ -1,5 +1,10 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
+int a = 32;
+int b = 44;
+float c = 32.0f;
+double d = 420.69;
+
 var mat = new Matrix() {
     Row0 = new Vector{
         X = 0,
