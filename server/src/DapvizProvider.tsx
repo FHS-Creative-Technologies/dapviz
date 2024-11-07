@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext, useEffect, useReducer, useState } from "react";
+import { createContext, ReactElement, ReactNode, useContext, useEffect, useReducer, useState } from "react";
 import { applyUpdate, VisualizationState } from "./dap";
 
 const DapvizContext = createContext<VisualizationState | null>(null);
@@ -12,7 +12,7 @@ export const useDapviz = () => {
   return data;
 }
 
-const DapvizProvider = ({ children, fallback: Fallback }: { children: ReactNode, fallback: () => JSX.Element }) => {
+const DapvizProvider = ({ children, noConnection }: { children: ReactNode, noConnection: ReactElement }) => {
   const [connection, setConnection] = useState<boolean>(false);
   const [visualization, dispatch] = useReducer(applyUpdate, { stack: [], heap: {} });
 
@@ -49,7 +49,7 @@ const DapvizProvider = ({ children, fallback: Fallback }: { children: ReactNode,
         {children}
       </DapvizContext.Provider>
     ) : (
-      <Fallback />
+      noConnection
     )
   );
 };
