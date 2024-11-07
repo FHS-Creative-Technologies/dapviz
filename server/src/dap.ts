@@ -16,6 +16,44 @@ export interface VariablesState {
   heap: Record<string, HeapObject>,
 }
 
+function handleVariablesResponse(state: VariablesState, data: { body: { variables: Variable[] } }) {
+  const variables = data.body.variables;
+  for (const variable of variables) {
+    if (variable.name.startsWith("args")) continue; // TODO: args is also a valid variable name?
+
+    if (isStackVariable(variable)) {
+      state.stack.push(variable);
+    } else if (isHeapVariable(variable)) {
+      const heapObj: HeapObject = {
+        variable,
+        children: {}, // TODO: handle children
+      }
+
+      const key = variable.memoryReference || variable.name;
+      state.heap[key] = heapObj;
+    } else {
+      console.error("Unknown variable type", variable);
+    }
+  }
+
+  return state;
+}
+
+// dap ts types: https://www.npmjs.com/package/@vscode/debugprotocol
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO: cast with valibot or just do known dap types
+type HandlerFunction = (state: VariablesState, data: any) => VariablesState;
+
+const stateTransformers: Record<string, HandlerFunction> = {
+  "variables_response": handleVariablesResponse,
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO: cast with valibot or just do known dap types
+export const applyUpdate = (state: VariablesState, data: any) => {
+  const requestType = `${data.command}_${data.response}`;
+  const transformer = stateTransformers[requestType];
+  return transformer?.(state, data);
+};
+
 export const isStackVariable = (variable: Variable) => {
   return variable.type === "int" || variable.type === "float"
     || variable.type === "char" || variable.type === "double"
