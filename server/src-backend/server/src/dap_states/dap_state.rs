@@ -2,7 +2,9 @@ use dap_types::types::{EventBody, RequestArguments, ResponseBody};
 use enum_dispatch::enum_dispatch;
 use std::fmt::Debug;
 
-use crate::dap_states::states::{initialized::Initialized, uninitialized::Uninitialized};
+use crate::dap_states::states::{
+    configuration_done::ConfigurationDone, initialized::Initialized, uninitialized::Uninitialized,
+};
 
 #[enum_dispatch(DapState)]
 pub trait DapStateHandler {
@@ -29,4 +31,5 @@ pub trait DapStateHandler {
 pub enum DapState {
     Uninitialized,
     Initialized,
+    ConfigurationDone,
 }
