@@ -1,15 +1,15 @@
-[package]
-name = "dapviz"
-version = "0.1.0"
-edition = "2021"
+[workspace]
 
-[dependencies]
-axum = { version = "0.7.5", features = ["tracing", "macros", "http2", "ws"] }
-bytes = "1.7.2"
-clap = { version = "4.5.16", features = ["derive"] }
-tokio = { version = "1.39.3", features = ["full"] }
-tracing = "0.1.40"
-tracing-subscriber = { version = "0.3.18", features = ["fmt"] }
+resolver = "2"
+
+members = [
+    "server",
+    "dap-types"
+]
+
+[workspace.dependencies]
+serde = { version = "1.0.215", features = ["derive"] }
+serde_json = "1.0.133"
 
 [profile.release]
 lto = "fat"

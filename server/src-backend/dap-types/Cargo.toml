@@ -1,0 +1,10 @@
+[package]
+name = "dap-types"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+schemafy = "0.6.0"
+serde = { workspace = true}
+serde-aux = { version = "4.5.0", default-features = false }
+serde_json = { workspace = true}
