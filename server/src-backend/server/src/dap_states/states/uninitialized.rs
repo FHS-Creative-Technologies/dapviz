@@ -5,12 +5,12 @@ use crate::{
     dap_states::dap_state::{DapState, DapStateHandler},
 };
 
-use super::initialized::InitializedState;
+use super::initialized::Initialized;
 
 #[derive(Debug)]
-pub struct UninitializedState(pub Language);
+pub struct Uninitialized(pub Language);
 
-impl DapStateHandler for UninitializedState {
+impl DapStateHandler for Uninitialized {
     fn next_requests(&self) -> Option<Box<[dap_types::types::RequestArguments]>> {
         Some(Box::new([RequestArguments::initialize(
             dap_types::types::InitializeRequestArguments {
@@ -39,9 +39,7 @@ impl DapStateHandler for UninitializedState {
 
     fn handle_response(&mut self, response: &dap_types::types::ResponseBody) -> Option<DapState> {
         match response {
-            dap_types::types::ResponseBody::initialize(..) => {
-                Some(DapState::Initialized(InitializedState(self.0)))
-            }
+            dap_types::types::ResponseBody::initialize(..) => Some(Initialized(self.0).into()),
             _ => {
                 tracing::error!("Unexpected response: {:?}", response);
                 None

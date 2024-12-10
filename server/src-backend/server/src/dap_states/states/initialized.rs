@@ -4,9 +4,9 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct InitializedState(pub Language);
+pub struct Initialized(pub Language);
 
-impl DapStateHandler for InitializedState {
+impl DapStateHandler for Initialized {
     fn next_requests(&self) -> Option<Box<[dap_types::types::RequestArguments]>> {
         None
     }

@@ -6,7 +6,10 @@ use serde::Serialize;
 
 use crate::dap_client::Language;
 
-use super::{dap_state::DapState, states::uninitialized::UninitializedState};
+use super::{
+    dap_state::{DapState, DapStateHandler},
+    states::uninitialized::Uninitialized,
+};
 
 #[derive(Debug)]
 pub struct DapStateMachine {
@@ -20,7 +23,7 @@ pub struct ProgramState {}
 impl DapStateMachine {
     pub fn new(language: Language) -> Self {
         DapStateMachine {
-            state: DapState::Uninitialized(UninitializedState(language)),
+            state: Uninitialized(language).into(),
             might_have_new_requests: true.into(),
         }
     }
