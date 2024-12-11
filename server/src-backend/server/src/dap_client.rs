@@ -161,9 +161,12 @@ impl DapProcess {
             .skip(1)
             .filter_map(|body| {
                 let first_index = body.find("{")?;
+                let json = &body[first_index..];
 
-                serde_json::from_str(&body[first_index..])
-                    .inspect_err(|err| tracing::error!("Failed parsing DAP response: {}", err))
+                serde_json::from_str(json)
+                    .inspect_err(|err| {
+                        tracing::error!("Failed parsing DAP response: {}\n{}", json, err)
+                    })
                     .ok()
             })
             .collect::<Vec<_>>())
@@ -185,7 +188,8 @@ impl DapClient {
         let launch_info: DapLaunchInfo = launch_info.into();
         let process = DapProcess::start(&launch_info).await?;
 
-        let mut state_machine = DapStateMachine::new(launch_info.language);
+        let mut state_machine =
+            DapStateMachine::new(launch_info.language, launch_info.executable_path);
 
         loop {
             while let Some(next) = state_machine.next_dap_requests() {
@@ -210,12 +214,10 @@ impl DapClient {
                 }
             };
 
-            if self
-                .program_state_sender
-                .send(state_machine.current_program_state())
-                .is_err()
-            {
-                break;
+            if let Some(program_state) = state_machine.current_program_state() {
+                if self.program_state_sender.send(program_state).is_err() {
+                    break;
+                }
             }
         }
 

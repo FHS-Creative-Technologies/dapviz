@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use clap::Args;
 use clap::Parser as _;
 
@@ -25,8 +27,16 @@ pub struct LaunchInfo {
 
 impl From<LaunchInfo> for DapLaunchInfo {
     fn from(value: LaunchInfo) -> Self {
+        // TODO: proper error handling
+        let full_path = Path::new(&value.executable_path)
+            .canonicalize()
+            .expect("executable path does not exist");
+
         DapLaunchInfo {
-            executable_path: value.executable_path,
+            executable_path: full_path
+                .to_str()
+                .expect("executable path should be valid utf-8")
+                .into(),
             language: value.language,
         }
     }

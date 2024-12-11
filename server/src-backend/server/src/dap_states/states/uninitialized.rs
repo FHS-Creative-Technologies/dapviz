@@ -2,19 +2,25 @@ use dap_types::types::RequestArguments;
 
 use crate::{
     dap_client::Language,
-    dap_states::dap_state::{DapState, DapStateHandler},
+    dap_states::{
+        dap_state::{DapState, DapStateHandler},
+        dap_state_machine::DapContext,
+    },
 };
 
 use super::initialized::Initialized;
 
 #[derive(Debug)]
-pub struct Uninitialized(pub Language);
+pub struct Uninitialized;
 
 impl DapStateHandler for Uninitialized {
-    fn next_requests(&self) -> Option<Box<[dap_types::types::RequestArguments]>> {
+    fn next_requests(
+        &self,
+        context: &DapContext,
+    ) -> Option<Box<[dap_types::types::RequestArguments]>> {
         Some(Box::new([RequestArguments::initialize(
             dap_types::types::InitializeRequestArguments {
-                adapter_id: match self.0 {
+                adapter_id: match context.language {
                     Language::CSharp => "coreclr".into(),
                 },
                 client_id: Some("dapviz".into()),
@@ -37,9 +43,13 @@ impl DapStateHandler for Uninitialized {
         )]))
     }
 
-    fn handle_response(&mut self, response: &dap_types::types::ResponseBody) -> Option<DapState> {
+    fn handle_response(
+        &mut self,
+        _context: &DapContext,
+        response: &dap_types::types::ResponseBody,
+    ) -> Option<DapState> {
         match response {
-            dap_types::types::ResponseBody::initialize(..) => Some(Initialized(self.0).into()),
+            dap_types::types::ResponseBody::initialize(..) => Some(Initialized.into()),
             _ => {
                 tracing::error!("Unexpected response: {:?}", response);
                 None

@@ -80,7 +80,7 @@ impl Display for ResponseBody {
         match self {
             ResponseBody::initialize(..) => write!(f, "initialize"),
             ResponseBody::cancel => write!(f, "cancel"),
-            ResponseBody::launch => write!(f, "launch"),
+            ResponseBody::launch(..) => write!(f, "launch"),
             ResponseBody::attach => write!(f, "attach"),
             ResponseBody::restart => write!(f, "restart"),
             ResponseBody::setBreakpoints(..) => write!(f, "setBreakpoints"),
@@ -88,7 +88,7 @@ impl Display for ResponseBody {
             ResponseBody::setFunctionBreakpoints(..) => todo!(),
             ResponseBody::setExceptionBreakpoints => write!(f, "setExceptionBreakpoints"),
             ResponseBody::exceptionInfo(..) => write!(f, "exceptionInfo"),
-            ResponseBody::configurationDone => todo!(),
+            ResponseBody::configurationDone(..) => todo!(),
             ResponseBody::pause => write!(f, "pause"),
             ResponseBody::continue_(..) => write!(f, "continue_"),
             ResponseBody::next => todo!(),

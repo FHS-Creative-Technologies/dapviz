@@ -154,7 +154,7 @@ pub enum RequestArguments {
 pub enum ResponseBody {
     initialize(Capabilities),
     cancel,
-    launch,
+    launch(Option<NoArguments>),
     attach,
     restart,
     setBreakpoints(SetBreakpointsResponseBody),
@@ -162,7 +162,7 @@ pub enum ResponseBody {
     setFunctionBreakpoints(SetBreakpointsResponseBody),
     setExceptionBreakpoints,
     exceptionInfo(ExceptionInfoResponseBody),
-    configurationDone,
+    configurationDone(Option<NoArguments>),
     pause,
     #[serde(rename = "continue")]
     continue_(ContinueResponseBody),
@@ -204,7 +204,7 @@ pub enum ResponseBody {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "event", content = "body")]
 pub enum EventBody {
-    initialized(()),
+    initialized(Option<NoArguments>),
     output(OutputEventBody),
     breakpoint(BreakpointEventBody),
     capabilities(CapabilitiesEventBody),
@@ -484,7 +484,7 @@ mod tests {
                 seq: 3,
                 type_: ProtocolMessageType::Response(Response {
                     result: ResponseResult::Success {
-                        body: ResponseBody::launch
+                        body: ResponseBody::launch(None),
                     },
                     ..
                 })
@@ -494,12 +494,12 @@ mod tests {
 
     #[test]
     fn test_event() {
-        let event = parse(br#"{"type":"event","event":"initialized","seq":0,"body":{}}"#);
+        let event = parse(br#"{"type":"event","event":"initialized","seq":0}"#);
         assert_matches!(
             event,
             ProtocolMessage {
                 seq: 0,
-                type_: ProtocolMessageType::Event(EventBody::initialized(()))
+                type_: ProtocolMessageType::Event(EventBody::initialized(None))
             }
         );
 
