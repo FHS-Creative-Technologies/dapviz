@@ -1,5 +1,3 @@
-use std::{thread, time::Duration};
-
 use dap_types::types::{RequestArguments, ResponseBody};
 
 use crate::dap_states::{
@@ -15,7 +13,6 @@ impl DapStateHandler for QueryThreads {
         &self,
         _context: &DapContext,
     ) -> Option<Box<[dap_types::types::RequestArguments]>> {
-        thread::sleep(Duration::from_secs(1));
         Some(Box::new([RequestArguments::threads(None)]))
     }
 

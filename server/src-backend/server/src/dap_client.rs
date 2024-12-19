@@ -51,8 +51,6 @@ impl DapProcess {
                 command.args([
                     "--interpreter=vscode",
                     &format!("--server={PORT}"),
-                    "--",
-                    &launch_info.executable_path,
                 ]);
 
                 command
@@ -196,8 +194,6 @@ impl DapClient {
                 process.send(&next).await?;
                 state_machine = state_machine.process(&process.receive().await?);
             }
-
-            dbg!(&state_machine);
 
             tokio::select! {
                 command = self.dap_command_receiver.recv() => {

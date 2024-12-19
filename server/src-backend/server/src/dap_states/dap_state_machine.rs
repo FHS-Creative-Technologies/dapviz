@@ -46,29 +46,35 @@ impl DapStateMachine {
     pub fn process(mut self, messages: &[ProtocolMessage]) -> Self {
         for message in messages {
             let next_state = match &message.type_ {
-                ProtocolMessageType::Request(request_arguments) => self
-                    .state
-                    .handle_reverse_request(&self.context, request_arguments),
-                ProtocolMessageType::Response(response) => match &response.result {
-                    dap_types::types::ResponseResult::Success { body } => {
-                        self.state.handle_response(&self.context, body)
+                ProtocolMessageType::Request(request_arguments) => {
+                    tracing::debug!("Received reverse request: {:?}", request_arguments);
+                    self.state
+                        .handle_reverse_request(&self.context, request_arguments)
+                }
+                ProtocolMessageType::Response(response) => {
+                    tracing::debug!("Received response: {:?}", response);
+                    match &response.result {
+                        dap_types::types::ResponseResult::Success { body } => {
+                            self.state.handle_response(&self.context, body)
+                        }
+                        dap_types::types::ResponseResult::Error {
+                            command,
+                            message,
+                            show_user: _,
+                        } => {
+                            tracing::error!("Request \"{command}\" failed: {message}");
+                            None
+                        }
                     }
-                    dap_types::types::ResponseResult::Error {
-                        command,
-                        message,
-                        show_user: _,
-                    } => {
-                        tracing::error!("DAP Request \"{command}\" failed: {message}");
-                        None
-                    }
-                },
+                }
                 ProtocolMessageType::Event(event_body) => {
+                    tracing::debug!("Received event: {:?}", event_body);
                     self.state.handle_event(&self.context, event_body)
                 }
             };
 
             if let Some(next) = next_state {
-                tracing::debug!("DAP transition: {:?}", next);
+                tracing::debug!("Transition into '{:?}'", next);
                 self.state = next;
                 self.might_have_new_requests.set(true);
             }
