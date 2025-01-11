@@ -10,14 +10,13 @@ use axum::{
     routing::get,
     Router,
 };
-use dap_types::types::RequestArguments;
 use tokio::net::TcpListener;
 
-use crate::dap_states::dap_state_machine::ProgramState;
+use crate::{dap_client::UserRequest, dap_states::dap_state_machine::ProgramState};
 
 pub struct Webserver {
     program_state_receiver: tokio::sync::watch::Receiver<ProgramState>,
-    dap_command_sender: tokio::sync::broadcast::Sender<RequestArguments>,
+    user_request_sender: tokio::sync::broadcast::Sender<UserRequest>,
 }
 
 #[derive(Clone)]
@@ -28,11 +27,11 @@ struct AppState {
 impl Webserver {
     pub fn new(
         program_state_receiver: tokio::sync::watch::Receiver<ProgramState>,
-        dap_command_sender: tokio::sync::broadcast::Sender<RequestArguments>,
+        user_request_sender: tokio::sync::broadcast::Sender<UserRequest>,
     ) -> Self {
         Webserver {
             program_state_receiver,
-            dap_command_sender,
+            user_request_sender,
         }
     }
 

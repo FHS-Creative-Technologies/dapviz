@@ -4,9 +4,9 @@ use clap::Args;
 use clap::Parser as _;
 
 use dap_client::DapLaunchInfo;
+use dap_client::UserRequest;
 use dap_client::{DapClient, Language};
 use dap_states::dap_state_machine::ProgramState;
-use dap_types::types::RequestArguments;
 use tracing_subscriber::EnvFilter;
 use webserver::Webserver;
 
@@ -70,11 +70,11 @@ async fn main() -> anyhow::Result<()> {
     let (program_state_sender, program_state_receiver) =
         tokio::sync::watch::channel::<ProgramState>(ProgramState::default());
 
-    let (dap_command_sender, dap_command_receiver) =
-        tokio::sync::broadcast::channel::<RequestArguments>(64);
+    let (user_request_sender, user_request_receiver) =
+        tokio::sync::broadcast::channel::<UserRequest>(64);
 
-    let webserver = Webserver::new(program_state_receiver, dap_command_sender);
-    let dap_client = DapClient::new(program_state_sender, dap_command_receiver);
+    let webserver = Webserver::new(program_state_receiver, user_request_sender);
+    let dap_client = DapClient::new(program_state_sender, user_request_receiver);
 
     tokio::select! {
         ok = dap_client.run(cli.launch_info) => ok,

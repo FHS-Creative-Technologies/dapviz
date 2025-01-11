@@ -4,7 +4,7 @@ use dap_types::types::{ProtocolMessage, ProtocolMessageType, RequestArguments};
 
 use serde::Serialize;
 
-use crate::dap_client::Language;
+use crate::dap_client::{Language, UserRequest};
 
 use super::{
     dap_state::{DapState, DapStateHandler},
@@ -43,7 +43,13 @@ impl DapStateMachine {
         None
     }
 
-    pub fn process(mut self, messages: &[ProtocolMessage]) -> Self {
+    fn transition(&mut self, state: DapState) {
+        tracing::debug!("Transition into '{:?}'", state);
+        self.state = state;
+        self.might_have_new_requests.set(true);
+    }
+
+    pub fn process_dap_messages(mut self, messages: &[ProtocolMessage]) -> Self {
         for message in messages {
             let next_state = match &message.type_ {
                 ProtocolMessageType::Request(request_arguments) => {
@@ -73,12 +79,19 @@ impl DapStateMachine {
                 }
             };
 
-            if let Some(next) = next_state {
-                tracing::debug!("Transition into '{:?}'", next);
-                self.state = next;
-                self.might_have_new_requests.set(true);
+            if let Some(next_state) = next_state {
+                self.transition(next_state);
             }
         }
+
+        self
+    }
+
+    pub fn process_user_request(mut self, request: &UserRequest) -> Self {
+        if let Some(next_state) = self.state.handle_user_request(request) {
+            self.transition(next_state);
+        }
+
         self
     }
 

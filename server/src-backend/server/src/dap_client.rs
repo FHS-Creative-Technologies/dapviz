@@ -1,4 +1,6 @@
-use std::{io::Read, net::Ipv4Addr, sync::atomic::AtomicUsize, time::Duration};
+use std::{
+    collections::VecDeque, io::Read, net::Ipv4Addr, sync::atomic::AtomicUsize, time::Duration,
+};
 
 use anyhow::Context;
 use backoff::{future::retry, ExponentialBackoffBuilder};
@@ -21,6 +23,11 @@ pub enum Language {
     CSharp,
 }
 
+#[derive(Serialize, Debug, Copy, Clone, PartialEq, Eq)]
+pub enum UserRequest {
+    Step,
+}
+
 pub struct DapLaunchInfo {
     pub executable_path: String,
     pub language: Language,
@@ -28,7 +35,7 @@ pub struct DapLaunchInfo {
 
 pub struct DapClient {
     program_state_sender: tokio::sync::watch::Sender<ProgramState>,
-    dap_command_receiver: tokio::sync::broadcast::Receiver<RequestArguments>,
+    user_request_receiver: tokio::sync::broadcast::Receiver<UserRequest>,
 }
 
 struct DapProcess {
@@ -48,10 +55,7 @@ impl DapProcess {
             Language::CSharp => {
                 // TODO: use vendored version in release build
                 let mut command = tokio::process::Command::new("/usr/local/netcoredbg");
-                command.args([
-                    "--interpreter=vscode",
-                    &format!("--server={PORT}"),
-                ]);
+                command.args(["--interpreter=vscode", &format!("--server={PORT}")]);
 
                 command
             }
@@ -174,11 +178,11 @@ impl DapProcess {
 impl DapClient {
     pub fn new(
         program_state_sender: tokio::sync::watch::Sender<ProgramState>,
-        dap_command_receiver: tokio::sync::broadcast::Receiver<RequestArguments>,
+        user_request_receiver: tokio::sync::broadcast::Receiver<UserRequest>,
     ) -> Self {
         DapClient {
             program_state_sender,
-            dap_command_receiver,
+            user_request_receiver,
         }
     }
 
@@ -192,20 +196,21 @@ impl DapClient {
         loop {
             while let Some(next) = state_machine.next_dap_requests() {
                 process.send(&next).await?;
-                state_machine = state_machine.process(&process.receive().await?);
+                state_machine = state_machine.process_dap_messages(&process.receive().await?);
             }
 
             tokio::select! {
-                command = self.dap_command_receiver.recv() => {
-                    let _command = command.context("no more dap command senders")?;
+                request = self.user_request_receiver.recv() => {
+                    let request = request.context("no more dap command senders")?;
 
-                    // TODO: dap_command_broadcast should send statemachine transitions, not dap
-                    // requests
+                    // TODO: add user requests to a queue so inputs don't get discarded if the
+                    // current state can't handle it
+                    state_machine = state_machine.process_user_request(&request);
                 },
                 messages = process.receive() => {
                     let messages = messages.context("could not receive messages")?;
                     if !messages.is_empty() {
-                        state_machine = state_machine.process(&messages);
+                        state_machine = state_machine.process_dap_messages(&messages);
                     }
                 }
             };

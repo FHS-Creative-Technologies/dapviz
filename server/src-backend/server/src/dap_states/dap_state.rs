@@ -2,9 +2,13 @@ use dap_types::types::{EventBody, RequestArguments, ResponseBody};
 use enum_dispatch::enum_dispatch;
 use std::fmt::Debug;
 
-use crate::dap_states::states::{
-    configuration_done::ConfigurationDone, initialized::Initialized, query_threads::QueryThreads,
-    uninitialized::Uninitialized, wait_for_breakpoint_hit::WaitForBreakpointHit,
+use crate::{
+    dap_client::UserRequest,
+    dap_states::states::{
+        configuration_done::ConfigurationDone, initialized::Initialized,
+        query_threads::QueryThreads, uninitialized::Uninitialized,
+        wait_for_breakpoint_hit::WaitForBreakpointHit,
+    },
 };
 
 use super::dap_state_machine::DapContext;
@@ -16,6 +20,8 @@ pub trait DapStateHandler {
         context: &DapContext,
         response: &ResponseBody,
     ) -> Option<DapState>;
+
+    fn next_requests(&self, context: &DapContext) -> Option<Box<[RequestArguments]>>;
 
     fn handle_event(&mut self, _context: &DapContext, _event: &EventBody) -> Option<DapState> {
         None
@@ -35,7 +41,9 @@ pub trait DapStateHandler {
         None
     }
 
-    fn next_requests(&self, context: &DapContext) -> Option<Box<[RequestArguments]>>;
+    fn handle_user_request(&mut self, _request: &UserRequest) -> Option<DapState> {
+        None
+    }
 }
 
 #[enum_dispatch]
