@@ -76,7 +76,7 @@ async fn handle_socket(
         let serialized = serde_json::to_string(program_state.borrow_and_update().deref())
             .expect("ProgramState must not contain a Map with non-string keys");
 
-        if socket.send(Message::Text(serialized)).await.is_err() {
+        if socket.send(Message::Text(serialized.into())).await.is_err() {
             // websocket closed
             break;
         }
