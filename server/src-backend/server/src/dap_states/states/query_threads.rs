@@ -3,6 +3,7 @@ use dap_types::types::{RequestArguments, ResponseBody};
 use crate::dap_states::{
     dap_state::{DapState, DapStateHandler},
     dap_state_machine::DapContext,
+    states::wait_for_user_input::WaitForUserInput,
 };
 
 #[derive(Debug)]
@@ -24,7 +25,7 @@ impl DapStateHandler for QueryThreads {
         match response {
             ResponseBody::threads(threads) => {
                 dbg!(threads);
-                None
+                Some(WaitForUserInput.into())
             }
             _ => {
                 tracing::error!("Unexpected response: {:?}", response);

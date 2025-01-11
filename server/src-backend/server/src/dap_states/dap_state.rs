@@ -8,6 +8,7 @@ use crate::{
         configuration_done::ConfigurationDone, initialized::Initialized,
         query_threads::QueryThreads, uninitialized::Uninitialized,
         wait_for_breakpoint_hit::WaitForBreakpointHit,
+        wait_for_user_input::WaitForUserInput,
     },
 };
 
@@ -54,4 +55,5 @@ pub enum DapState {
     ConfigurationDone,
     WaitForBreakpointHit,
     QueryThreads,
+    WaitForUserInput,
 }
