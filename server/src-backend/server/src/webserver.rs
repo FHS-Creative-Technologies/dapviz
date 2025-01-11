@@ -1,4 +1,4 @@
-use std::{ops::Deref as _, sync::Arc};
+use std::{ops::Deref, sync::Arc};
 
 use axum::{
     extract::{
@@ -22,6 +22,7 @@ pub struct Webserver {
 #[derive(Clone)]
 struct AppState {
     program_state: Arc<tokio::sync::watch::Receiver<ProgramState>>,
+    request_sender: Arc<tokio::sync::broadcast::Sender<UserRequest>>,
 }
 
 impl Webserver {
@@ -38,6 +39,7 @@ impl Webserver {
     pub async fn serve(self, address: impl tokio::net::ToSocketAddrs) -> anyhow::Result<()> {
         let state = AppState {
             program_state: Arc::new(self.program_state_receiver),
+            request_sender: Arc::new(self.user_request_sender),
         };
 
         let listener = TcpListener::bind(address).await?;
@@ -64,12 +66,28 @@ async fn initialize_events_websocket(
     ws: WebSocketUpgrade,
     State(state): State<AppState>,
 ) -> impl IntoResponse {
-    ws.on_upgrade(move |socket| handle_socket(socket, state.program_state.deref().clone()))
+    ws.on_upgrade(move |socket| {
+        handle_socket(
+            socket,
+            state.program_state.deref().clone(),
+            state.request_sender.deref().clone(),
+        )
+    })
+}
+
+impl TryFrom<Message> for UserRequest {
+    type Error = anyhow::Error;
+
+    fn try_from(_value: Message) -> Result<Self, Self::Error> {
+        // TODO: parse
+        Ok(UserRequest::Step)
+    }
 }
 
 async fn handle_socket(
     mut socket: WebSocket,
     mut program_state: tokio::sync::watch::Receiver<ProgramState>,
+    request_sender: tokio::sync::broadcast::Sender<UserRequest>,
 ) {
     loop {
         let serialized = serde_json::to_string(program_state.borrow_and_update().deref())
@@ -80,9 +98,29 @@ async fn handle_socket(
             break;
         }
 
-        if program_state.changed().await.is_err() {
-            // dap server closed
-            break;
+        tokio::select! {
+            received = socket.recv() => {
+                if let Some(message) = received.and_then(|result| result.ok()) {
+                    match UserRequest::try_from(message) {
+                        Ok(request) => if request_sender.send(request).is_err() {
+                            // dap server closed
+                            break;
+                        }
+                        Err(err) => {
+                            tracing::error!("Invalid UserRequest: {err}");
+                        }
+                    }
+                } else {
+                    // websocket closed or had some other error
+                    break;
+                }
+            },
+            change_result = program_state.changed() => {
+                if change_result.is_err() {
+                    // dap server closed
+                    break;
+                }
+            }
         }
     }
 }
