@@ -3,16 +3,19 @@ use enum_dispatch::enum_dispatch;
 use std::fmt::Debug;
 
 use crate::dap_states::states::{
-    configuration_done::ConfigurationDone, initialized::Initialized,
-    program_launched::ProgramLaunched, query_threads::QueryThreads, uninitialized::Uninitialized,
+    configuration_done::ConfigurationDone, initialized::Initialized, query_threads::QueryThreads,
+    uninitialized::Uninitialized, wait_for_breakpoint_hit::WaitForBreakpointHit,
 };
 
 use super::dap_state_machine::DapContext;
 
 #[enum_dispatch(DapState)]
 pub trait DapStateHandler {
-    fn handle_response(&mut self, context: &DapContext, response: &ResponseBody)
-        -> Option<DapState>;
+    fn handle_response(
+        &mut self,
+        context: &DapContext,
+        response: &ResponseBody,
+    ) -> Option<DapState>;
 
     fn handle_event(&mut self, _context: &DapContext, _event: &EventBody) -> Option<DapState> {
         None
@@ -40,7 +43,7 @@ pub trait DapStateHandler {
 pub enum DapState {
     Uninitialized,
     Initialized,
-    ProgramLaunched,
     ConfigurationDone,
+    WaitForBreakpointHit,
     QueryThreads,
 }
