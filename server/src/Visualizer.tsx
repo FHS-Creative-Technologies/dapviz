@@ -2,7 +2,7 @@ import { Html, MapControls } from "@react-three/drei";
 import { useDapviz } from "./DapvizProvider";
 
 const Visualizer = () => {
-  const visualization = useDapviz();
+  const [visualization,] = useDapviz();
   return (
     <>
       <mesh>

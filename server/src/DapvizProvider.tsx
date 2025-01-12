@@ -1,7 +1,14 @@
-import { createContext, ReactElement, ReactNode, useContext, useEffect, useReducer, useState } from "react";
-import { applyUpdate, VisualizationState } from "./dap";
+import { createContext, ReactElement, ReactNode, useContext, useEffect, useState } from "react";
 
-const DapvizContext = createContext<VisualizationState | null>(null);
+export enum DapvizRequest {
+  Step = 1,
+}
+
+type VisualizationState = unknown;
+
+type DapvizRequestFunction = (request: DapvizRequest) => void;
+
+const DapvizContext = createContext<[VisualizationState, DapvizRequestFunction] | null>(null);
 
 export const useDapviz = () => {
   const data = useContext(DapvizContext);
@@ -13,13 +20,17 @@ export const useDapviz = () => {
 }
 
 const DapvizProvider = ({ children, noConnection }: { children: ReactNode, noConnection: ReactElement }) => {
-  const [connection, setConnection] = useState<boolean>(false);
-  const [visualization, dispatch] = useReducer(applyUpdate, { stack: [], heap: {} });
+  const [requestFunction, setRequestFunction] = useState<DapvizRequestFunction | null>(null);
+  const [visualizationState, setVisualizationState] = useState<VisualizationState>(null);
 
   useEffect(() => {
     const ws = new WebSocket(`ws://${location.host}/api/events`);
 
-    ws.addEventListener("open", () => setConnection(true));
+    // NOTE: need to use the react state set function overload to set react state to a function
+    // https://stackoverflow.com/a/55621325/7482275
+    ws.addEventListener("open", () => setRequestFunction(() => (request: DapvizRequest) => {
+      ws.send(Uint8Array.from([request]));
+    }));
 
     ws.addEventListener("message", (e) => {
       let json;
@@ -30,22 +41,17 @@ const DapvizProvider = ({ children, noConnection }: { children: ReactNode, noCon
         return;
       }
 
-      if (!json.success) {
-        console.error("Unsuccessful DAP Request", json);
-        return;
-      }
-
-      dispatch(json)
+      setVisualizationState(json)
     })
 
-    ws.addEventListener("close", () => setConnection(false));
+    ws.addEventListener("close", () => setRequestFunction(null));
 
     return () => ws.close();
   }, [])
 
   return (
-    connection ? (
-      <DapvizContext.Provider value={visualization}>
+    (requestFunction !== null) ? (
+      <DapvizContext.Provider value={[visualizationState, requestFunction]}>
         {children}
       </DapvizContext.Provider>
     ) : (
