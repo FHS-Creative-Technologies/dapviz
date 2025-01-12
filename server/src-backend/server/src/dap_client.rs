@@ -1,6 +1,4 @@
-use std::{
-    collections::VecDeque, io::Read, net::Ipv4Addr, sync::atomic::AtomicUsize, time::Duration,
-};
+use std::{io::Read, net::Ipv4Addr, sync::atomic::AtomicUsize, time::Duration};
 
 use anyhow::Context;
 use backoff::{future::retry, ExponentialBackoffBuilder};
@@ -26,6 +24,8 @@ pub enum Language {
 #[derive(Serialize, Debug, Copy, Clone, PartialEq, Eq)]
 pub enum UserRequest {
     Step,
+    StepIn,
+    StepOut,
 }
 
 pub struct DapLaunchInfo {

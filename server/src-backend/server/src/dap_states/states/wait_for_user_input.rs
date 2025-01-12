@@ -20,6 +20,8 @@ impl DapStateHandler for WaitForUserInput {
     ) -> Option<DapState> {
         match request {
             crate::dap_client::UserRequest::Step => todo!("handle step request"),
+            crate::dap_client::UserRequest::StepIn => todo!(),
+            crate::dap_client::UserRequest::StepOut => todo!(),
         }
     }
 

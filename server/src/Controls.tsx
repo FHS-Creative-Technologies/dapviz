@@ -14,10 +14,13 @@ const Controls = () => {
       left: 0,
       right: 0,
       padding: 8,
+      gap: 4,
       pointerEvents: "none",
       zIndex: 2147483647,
     }}>
       <button onClick={request(DapvizRequest.Step)} style={{ pointerEvents: "all" }}>Step</button>
+      <button onClick={request(DapvizRequest.StepIn)} style={{ pointerEvents: "all" }}>Step In</button>
+      <button onClick={request(DapvizRequest.StepOut)} style={{ pointerEvents: "all" }}>Step Out</button>
     </div>
   );
 };

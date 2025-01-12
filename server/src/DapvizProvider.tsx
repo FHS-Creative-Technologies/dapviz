@@ -1,7 +1,10 @@
 import { createContext, ReactElement, ReactNode, useContext, useEffect, useState } from "react";
 
+// align these values with `impl TryFrom<Message> for UserRequest` block
 export enum DapvizRequest {
   Step = 1,
+  StepIn = 2,
+  StepOut = 3,
 }
 
 type VisualizationState = unknown;

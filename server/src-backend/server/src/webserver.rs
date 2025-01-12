@@ -90,6 +90,8 @@ impl TryFrom<Message> for UserRequest {
 
         Ok(match request_id {
             1 => UserRequest::Step,
+            2 => UserRequest::StepIn,
+            3 => UserRequest::StepOut,
             _ => anyhow::bail!("unknown user request id: {}", request_id),
         })
     }
