@@ -101,6 +101,14 @@ async fn handle_socket(
         tokio::select! {
             received = socket.recv() => {
                 if let Some(message) = received.and_then(|result| result.ok()) {
+
+                    // don't try and handle websocket control messages, we only care about the data
+                    match message {
+                        Message::Ping(..) | Message::Pong(..) => continue,
+                        Message::Close(..) => break,
+                        _ => (),
+                    }
+
                     match UserRequest::try_from(message) {
                         Ok(request) => if request_sender.send(request).is_err() {
                             // dap server closed
