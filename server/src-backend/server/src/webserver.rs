@@ -84,14 +84,15 @@ impl TryFrom<Message> for UserRequest {
             _ => anyhow::bail!("expected binary websocket message"),
         };
 
-        let request_id = request_bytes
-            .first()
-            .ok_or(anyhow::anyhow!("invalid request: 0 bytes sent"))?;
+        anyhow::ensure!(request_bytes.len() == 9, "Unexpected message length");
+
+        let thread_id = i64::from_le_bytes(request_bytes[0..8].try_into()?);
+        let request_id = request_bytes[8];
 
         Ok(match request_id {
-            1 => UserRequest::Step,
-            2 => UserRequest::StepIn,
-            3 => UserRequest::StepOut,
+            1 => UserRequest::Step(thread_id),
+            2 => UserRequest::StepIn(thread_id),
+            3 => UserRequest::StepOut(thread_id),
             _ => anyhow::bail!("unknown user request id: {}", request_id),
         })
     }

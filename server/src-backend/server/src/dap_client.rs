@@ -23,9 +23,9 @@ pub enum Language {
 
 #[derive(Serialize, Debug, Copy, Clone, PartialEq, Eq)]
 pub enum UserRequest {
-    Step,
-    StepIn,
-    StepOut,
+    Step(i64),
+    StepIn(i64),
+    StepOut(i64),
 }
 
 pub struct DapLaunchInfo {
