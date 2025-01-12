@@ -78,9 +78,20 @@ async fn initialize_events_websocket(
 impl TryFrom<Message> for UserRequest {
     type Error = anyhow::Error;
 
-    fn try_from(_value: Message) -> Result<Self, Self::Error> {
-        // TODO: parse
-        Ok(UserRequest::Step)
+    fn try_from(value: Message) -> Result<Self, Self::Error> {
+        let request_bytes = match value {
+            Message::Binary(bytes) => bytes,
+            _ => anyhow::bail!("expected binary websocket message"),
+        };
+
+        let request_id = request_bytes
+            .first()
+            .ok_or(anyhow::anyhow!("invalid request: 0 bytes sent"))?;
+
+        Ok(match request_id {
+            1 => UserRequest::Step,
+            _ => anyhow::bail!("unknown user request id: {}", request_id),
+        })
     }
 }
 
