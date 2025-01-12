@@ -40,7 +40,7 @@ impl DapStateHandler for Initialized {
 
     fn handle_response(
         &mut self,
-        _context: &DapContext,
+        _context: &mut DapContext,
         response: &dap_types::types::ResponseBody,
     ) -> Option<DapState> {
         match response {

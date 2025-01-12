@@ -9,6 +9,7 @@ use crate::{
         query_threads::QueryThreads, uninitialized::Uninitialized,
         wait_for_breakpoint_hit::WaitForBreakpointHit,
         wait_for_user_input::WaitForUserInput,
+        step::Step,
     },
 };
 
@@ -18,19 +19,19 @@ use super::dap_state_machine::DapContext;
 pub trait DapStateHandler {
     fn handle_response(
         &mut self,
-        context: &DapContext,
+        context: &mut DapContext,
         response: &ResponseBody,
     ) -> Option<DapState>;
 
     fn next_requests(&self, context: &DapContext) -> Option<Box<[RequestArguments]>>;
 
-    fn handle_event(&mut self, _context: &DapContext, _event: &EventBody) -> Option<DapState> {
+    fn handle_event(&mut self, _context: &mut DapContext, _event: &EventBody) -> Option<DapState> {
         None
     }
 
     fn handle_reverse_request(
         &mut self,
-        _context: &DapContext,
+        _context: &mut DapContext,
         request: &RequestArguments,
     ) -> Option<DapState> {
         match request {
@@ -56,4 +57,5 @@ pub enum DapState {
     WaitForBreakpointHit,
     QueryThreads,
     WaitForUserInput,
+    Step,
 }

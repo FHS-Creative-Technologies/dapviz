@@ -27,7 +27,7 @@ impl DapStateHandler for WaitForUserInput {
 
     fn handle_response(
         &mut self,
-        _context: &DapContext,
+        _context: &mut DapContext,
         response: &dap_types::types::ResponseBody,
     ) -> Option<DapState> {
         tracing::error!("Unexpected DAP Response: {}", response);

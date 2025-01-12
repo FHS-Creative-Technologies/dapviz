@@ -2,7 +2,7 @@ use dap_types::types::{RequestArguments, ResponseBody};
 
 use crate::dap_states::{
     dap_state::{DapState, DapStateHandler},
-    dap_state_machine::DapContext,
+    dap_state_machine::{DapContext, ProgramState},
     states::wait_for_user_input::WaitForUserInput,
 };
 
@@ -19,12 +19,12 @@ impl DapStateHandler for QueryThreads {
 
     fn handle_response(
         &mut self,
-        _context: &DapContext,
+        context: &mut DapContext,
         response: &dap_types::types::ResponseBody,
     ) -> Option<DapState> {
         match response {
             ResponseBody::threads(threads) => {
-                dbg!(threads);
+                context.program_state = Some(ProgramState::from_threads(&threads.threads));
                 Some(WaitForUserInput.into())
             }
             _ => {

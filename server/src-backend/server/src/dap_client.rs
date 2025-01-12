@@ -199,6 +199,12 @@ impl DapClient {
                 state_machine = state_machine.process_dap_messages(&process.receive().await?);
             }
 
+            if let Some(program_state) = state_machine.current_program_state() {
+                if self.program_state_sender.send(program_state.clone()).is_err() {
+                    break;
+                }
+            }
+
             tokio::select! {
                 request = self.user_request_receiver.recv() => {
                     let request = request.context("no more dap command senders")?;
@@ -214,12 +220,6 @@ impl DapClient {
                     }
                 }
             };
-
-            if let Some(program_state) = state_machine.current_program_state() {
-                if self.program_state_sender.send(program_state).is_err() {
-                    break;
-                }
-            }
         }
 
         Ok(())

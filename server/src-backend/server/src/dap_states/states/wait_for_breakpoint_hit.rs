@@ -18,7 +18,7 @@ impl DapStateHandler for WaitForBreakpointHit {
 
     fn handle_event(
         &mut self,
-        _context: &DapContext,
+        _context: &mut DapContext,
         event: &dap_types::types::EventBody,
     ) -> Option<DapState> {
         match event {
@@ -29,7 +29,7 @@ impl DapStateHandler for WaitForBreakpointHit {
 
     fn handle_response(
         &mut self,
-        _context: &DapContext,
+        _context: &mut DapContext,
         _response: &dap_types::types::ResponseBody,
     ) -> Option<DapState> {
         None

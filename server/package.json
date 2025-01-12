@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently --kill-others npm:dev:*",
     "dev:js": "vite",
-    "dev:rust": "cargo watch -C src-backend/ -- cargo run -- -a 127.0.0.1 -p 8080",
+    "dev:rust": "cargo watch -C src-backend/ -- RUST_LOG=\"debug\" LOG_OUTPUT=\"stderr\" cargo run -- -p 8080 --language c-sharp ../../playground/csharp/bin/Debug/net9.0/csharp.dll",
     "build": "npm run build:js && npm run build:rust",
     "build:js": "tsc && vite build",
     "build:rust": "cargo build --release --manifest-path src-backend/Cargo.toml",
