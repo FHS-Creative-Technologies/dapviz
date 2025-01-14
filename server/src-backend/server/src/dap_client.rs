@@ -13,19 +13,12 @@ use tokio::{
     },
 };
 
-use crate::dap_states::dap_state_machine::{DapStateMachine, ProgramState};
+use crate::{dap_states::dap_state_machine::{DapStateMachine, ProgramState}, user_request::UserRequest};
 
 use clap::ValueEnum;
 #[derive(Serialize, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 pub enum Language {
     CSharp,
-}
-
-#[derive(Serialize, Debug, Copy, Clone, PartialEq, Eq)]
-pub enum UserRequest {
-    Step(i64),
-    StepIn(i64),
-    StepOut(i64),
 }
 
 pub struct DapLaunchInfo {

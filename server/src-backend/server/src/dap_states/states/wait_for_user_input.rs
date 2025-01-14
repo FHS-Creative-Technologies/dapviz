@@ -1,6 +1,9 @@
-use crate::dap_states::{
-    dap_state::{DapState, DapStateHandler},
-    dap_state_machine::DapContext,
+use crate::{
+    dap_states::{
+        dap_state::{DapState, DapStateHandler},
+        dap_state_machine::DapContext,
+    },
+    user_request::UserRequest,
 };
 
 #[derive(Debug)]
@@ -14,23 +17,8 @@ impl DapStateHandler for WaitForUserInput {
         None
     }
 
-    fn handle_user_request(
-        &mut self,
-        request: &crate::dap_client::UserRequest,
-    ) -> Option<DapState> {
-        match request {
-            crate::dap_client::UserRequest::Step(thread_id) => {
-                tracing::info!("Step (Thread: {})", thread_id)
-            }
-            crate::dap_client::UserRequest::StepIn(thread_id) => {
-                tracing::info!("StepIn (Thread: {})", thread_id)
-            }
-            crate::dap_client::UserRequest::StepOut(thread_id) => {
-                tracing::info!("StepOut (Thread: {})", thread_id)
-            }
-        }
-
-        None
+    fn handle_user_request(&mut self, request: &UserRequest) -> Option<DapState> {
+        Some(request.into())
     }
 
     fn handle_response(

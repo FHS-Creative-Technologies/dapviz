@@ -4,15 +4,16 @@ use clap::Args;
 use clap::Parser as _;
 
 use dap_client::DapLaunchInfo;
-use dap_client::UserRequest;
 use dap_client::{DapClient, Language};
 use dap_states::dap_state_machine::ProgramState;
 use tracing_subscriber::EnvFilter;
+use user_request::UserRequest;
 use webserver::Webserver;
 
 pub mod dap_client;
 pub mod dap_states;
 pub mod webserver;
+pub mod user_request;
 
 #[derive(Args)]
 pub struct LaunchInfo {

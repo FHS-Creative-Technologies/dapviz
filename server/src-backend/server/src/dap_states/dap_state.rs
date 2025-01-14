@@ -3,14 +3,12 @@ use enum_dispatch::enum_dispatch;
 use std::fmt::Debug;
 
 use crate::{
-    dap_client::UserRequest,
     dap_states::states::{
         configuration_done::ConfigurationDone, initialized::Initialized,
-        query_threads::QueryThreads, uninitialized::Uninitialized,
-        wait_for_breakpoint_hit::WaitForBreakpointHit,
-        wait_for_user_input::WaitForUserInput,
-        step::Step,
+        query_threads::QueryThreads, step::Step, uninitialized::Uninitialized,
+        wait_for_breakpoint_hit::WaitForBreakpointHit, wait_for_user_input::WaitForUserInput,
     },
+    user_request::UserRequest,
 };
 
 use super::dap_state_machine::DapContext;
@@ -58,4 +56,14 @@ pub enum DapState {
     QueryThreads,
     WaitForUserInput,
     Step,
+}
+
+impl From<&UserRequest> for DapState {
+    fn from(value: &UserRequest) -> Self {
+        match value {
+            UserRequest::Step(thread_id) => Step(*thread_id).into(),
+            UserRequest::StepIn(_) => todo!(),
+            UserRequest::StepOut(_) => todo!(),
+        }
+    }
 }

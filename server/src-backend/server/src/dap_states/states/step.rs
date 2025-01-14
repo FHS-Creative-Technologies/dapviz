@@ -5,8 +5,10 @@ use crate::dap_states::{
     dap_state_machine::DapContext,
 };
 
+use super::wait_for_user_input::WaitForUserInput;
+
 #[derive(Debug)]
-pub struct Step;
+pub struct Step(pub i64);
 
 impl DapStateHandler for Step {
     fn next_requests(
@@ -14,7 +16,7 @@ impl DapStateHandler for Step {
         _context: &DapContext,
     ) -> Option<Box<[dap_types::types::RequestArguments]>> {
         Some(Box::new([RequestArguments::next(NextArguments {
-            thread_id: todo!("get main thread id into here"),
+            thread_id: self.0,
             single_thread: true.into(),
             granularity: None,
         })]))
@@ -26,7 +28,7 @@ impl DapStateHandler for Step {
         response: &dap_types::types::ResponseBody,
     ) -> Option<DapState> {
         match response {
-            dap_types::types::ResponseBody::next => todo!(),
+            dap_types::types::ResponseBody::next(..) => Some(WaitForUserInput.into()),
             _ => {
                 tracing::error!("Unexpected response: {:?}", response);
                 None

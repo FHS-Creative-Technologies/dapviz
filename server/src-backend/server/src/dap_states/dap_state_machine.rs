@@ -4,7 +4,7 @@ use dap_types::types::{ProtocolMessage, ProtocolMessageType, RequestArguments};
 
 use serde::Serialize;
 
-use crate::dap_client::{Language, UserRequest};
+use crate::{dap_client::Language, user_request::UserRequest};
 
 use super::{
     dap_state::{DapState, DapStateHandler},
@@ -81,8 +81,9 @@ impl DapStateMachine {
                     self.state
                         .handle_reverse_request(&mut self.context, request_arguments)
                 }
-                ProtocolMessageType::Response(response) => {
+                ProtocolMessageType::Response(response) if response.success => {
                     tracing::debug!("Received response: {:?}", response);
+
                     match &response.result {
                         dap_types::types::ResponseResult::Success { body } => {
                             self.state.handle_response(&mut self.context, body)
@@ -96,6 +97,10 @@ impl DapStateMachine {
                             None
                         }
                     }
+                }
+                ProtocolMessageType::Response(response) => {
+                    tracing::error!("Received error response: {:?}", response);
+                    None
                 }
                 ProtocolMessageType::Event(event_body) => {
                     tracing::debug!("Received event: {:?}", event_body);

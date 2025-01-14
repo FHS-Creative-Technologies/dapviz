@@ -166,10 +166,10 @@ pub enum ResponseBody {
     pause,
     #[serde(rename = "continue")]
     continue_(ContinueResponseBody),
-    next,
+    next(Option<NoArguments>),
     stepInTargets(StepInTargetsResponseBody),
-    stepIn,
-    stepOut,
+    stepIn(Option<NoArguments>),
+    stepOut(Option<NoArguments>),
     stepBack,
     reverseContinue,
     threads(ThreadsResponseBody),
