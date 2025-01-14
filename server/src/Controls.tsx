@@ -21,8 +21,8 @@ const Controls = () => {
       zIndex: 2147483647,
     }}>
       <button onClick={request(DapvizRequest.Step)} style={{ pointerEvents: "all" }}>Step</button>
-      <button disabled onClick={request(DapvizRequest.StepIn)} style={{ pointerEvents: "all" }}>Step In</button>
-      <button disabled onClick={request(DapvizRequest.StepOut)} style={{ pointerEvents: "all" }}>Step Out</button>
+      <button onClick={request(DapvizRequest.StepIn)} style={{ pointerEvents: "all" }}>Step In</button>
+      <button onClick={request(DapvizRequest.StepOut)} style={{ pointerEvents: "all" }}>Step Out</button>
       <select defaultValue={currentThread} onChange={(e) => setCurrentThread(+e.target.value)} style={{ pointerEvents: "all" }}>
         {
           programState.threads.map((thread) => (

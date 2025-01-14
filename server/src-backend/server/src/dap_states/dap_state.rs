@@ -5,8 +5,9 @@ use std::fmt::Debug;
 use crate::{
     dap_states::states::{
         configuration_done::ConfigurationDone, initialized::Initialized,
-        query_threads::QueryThreads, step::Step, uninitialized::Uninitialized,
-        wait_for_breakpoint_hit::WaitForBreakpointHit, wait_for_user_input::WaitForUserInput,
+        query_threads::QueryThreads, step::Step, step_in::StepIn, step_out::StepOut,
+        uninitialized::Uninitialized, wait_for_breakpoint_hit::WaitForBreakpointHit,
+        wait_for_user_input::WaitForUserInput,
     },
     user_request::UserRequest,
 };
@@ -56,14 +57,16 @@ pub enum DapState {
     QueryThreads,
     WaitForUserInput,
     Step,
+    StepIn,
+    StepOut,
 }
 
 impl From<&UserRequest> for DapState {
     fn from(value: &UserRequest) -> Self {
         match value {
             UserRequest::Step(thread_id) => Step(*thread_id).into(),
-            UserRequest::StepIn(_) => todo!(),
-            UserRequest::StepOut(_) => todo!(),
+            UserRequest::StepIn(thread_id) => StepIn(*thread_id).into(),
+            UserRequest::StepOut(thread_id) => StepOut(*thread_id).into(),
         }
     }
 }
