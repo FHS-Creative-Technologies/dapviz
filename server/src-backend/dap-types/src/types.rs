@@ -62,6 +62,7 @@ pub struct ProtocolMessage {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "type")]
+#[allow(clippy::large_enum_variant)]
 pub enum ProtocolMessageType {
     #[serde(rename = "request")]
     Request(RequestArguments),
