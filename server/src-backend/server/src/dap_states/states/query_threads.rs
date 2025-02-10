@@ -3,8 +3,9 @@ use dap_types::types::{RequestArguments, ResponseBody};
 use crate::dap_states::{
     dap_state::{DapState, DapStateHandler},
     dap_state_machine::{DapContext, ProgramState},
-    states::wait_for_user_input::WaitForUserInput,
 };
+
+use super::query_stack_traces::QueryStackTraces;
 
 #[derive(Debug)]
 pub struct QueryThreads;
@@ -25,7 +26,7 @@ impl DapStateHandler for QueryThreads {
         match response {
             ResponseBody::threads(threads) => {
                 context.program_state = Some(ProgramState::from_threads(&threads.threads));
-                Some(WaitForUserInput.into())
+                Some(QueryStackTraces.into())
             }
             _ => {
                 tracing::error!("Unexpected response: {:?}", response);

@@ -11,10 +11,20 @@ use super::{
     states::uninitialized::Uninitialized,
 };
 
+impl From<dap_types::types::StackFrame> for StackFrameInfo {
+    fn from(value: dap_types::types::StackFrame) -> Self {
+        StackFrameInfo {}
+    }
+}
+
+#[derive(Serialize, Clone, Debug, Default)]
+pub struct StackFrameInfo {}
+
 #[derive(Serialize, Clone, Debug, Default)]
 pub struct ThreadInfo {
     pub id: i64,
     pub name: String,
+    pub stack_frames: Option<Vec<StackFrameInfo>>,
 }
 
 impl ProgramState {
@@ -25,6 +35,7 @@ impl ProgramState {
                 .map(|thread| ThreadInfo {
                     id: thread.id,
                     name: thread.name.clone(),
+                    stack_frames: None,
                 })
                 .collect(),
         }

@@ -1,6 +1,9 @@
 pub mod configuration_done;
 pub mod initialized;
+pub mod query_scopes;
+pub mod query_stack_traces;
 pub mod query_threads;
+pub mod query_variables;
 pub mod step;
 pub mod step_in;
 pub mod step_out;
