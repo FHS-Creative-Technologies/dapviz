@@ -62,7 +62,7 @@ impl DapStateHandler for QueryScopes {
             .filter_map(|thread| thread.stack_frames.as_mut())
             .flatten()
             .enumerate()
-            .find(|(i, frame)| frame.scopes.is_none());
+            .find(|(_, frame)| frame.scopes.is_none());
 
         match response {
             ResponseBody::scopes(scopes) => Some(next_empty_stack_frame.map_or(
