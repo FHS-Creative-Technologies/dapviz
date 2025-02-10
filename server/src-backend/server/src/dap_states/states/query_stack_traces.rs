@@ -24,11 +24,6 @@ impl DapStateHandler for QueryStackTraces {
             tracing::warn!("QueryStackTraces state entered without threads in ProgramState")
         }
 
-        // TODO:
-        // 1) stackTrace request for threads -> we get a stackFrame per thread back
-        // 2) scopes request for stackFrame -> we get a scope with variablesReference back
-        // 3) variables request for scope -> we get variables yay
-
         let next_stack_trace_request = program_state
             .threads
             .iter()

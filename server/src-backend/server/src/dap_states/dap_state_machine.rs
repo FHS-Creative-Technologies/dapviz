@@ -11,14 +11,40 @@ use super::{
     states::uninitialized::Uninitialized,
 };
 
-impl From<dap_types::types::StackFrame> for StackFrameInfo {
-    fn from(value: dap_types::types::StackFrame) -> Self {
-        StackFrameInfo {}
+#[derive(Serialize, Clone, Debug, Default)]
+pub struct VariableInfo {
+    pub id: i64,
+}
+
+impl From<dap_types::types::Scope> for ScopeInfo {
+    fn from(value: dap_types::types::Scope) -> Self {
+        ScopeInfo {
+            variables_reference: value.variables_reference,
+            variables: None,
+        }
     }
 }
 
 #[derive(Serialize, Clone, Debug, Default)]
-pub struct StackFrameInfo {}
+pub struct ScopeInfo {
+    pub variables_reference: i64,
+    pub variables: Option<Vec<VariableInfo>>,
+}
+
+impl From<dap_types::types::StackFrame> for StackFrameInfo {
+    fn from(value: dap_types::types::StackFrame) -> Self {
+        StackFrameInfo {
+            id: value.id,
+            scopes: None,
+        }
+    }
+}
+
+#[derive(Serialize, Clone, Debug, Default)]
+pub struct StackFrameInfo {
+    pub id: i64,
+    pub scopes: Option<Vec<ScopeInfo>>,
+}
 
 #[derive(Serialize, Clone, Debug, Default)]
 pub struct ThreadInfo {

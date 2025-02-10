@@ -5,9 +5,10 @@ use std::fmt::Debug;
 use crate::{
     dap_states::states::{
         configuration_done::ConfigurationDone, initialized::Initialized, query_scopes::QueryScopes,
-        query_stack_traces::QueryStackTraces, query_threads::QueryThreads, step::Step,
-        step_in::StepIn, step_out::StepOut, uninitialized::Uninitialized,
-        wait_for_breakpoint_hit::WaitForBreakpointHit, wait_for_user_input::WaitForUserInput,
+        query_stack_traces::QueryStackTraces, query_threads::QueryThreads,
+        query_variables::QueryVariables, step::Step, step_in::StepIn, step_out::StepOut,
+        uninitialized::Uninitialized, wait_for_breakpoint_hit::WaitForBreakpointHit,
+        wait_for_user_input::WaitForUserInput,
     },
     user_request::UserRequest,
 };
@@ -57,6 +58,7 @@ pub enum DapState {
     QueryThreads,
     QueryStackTraces,
     QueryScopes,
+    QueryVariables,
     WaitForUserInput,
     Step,
     StepIn,

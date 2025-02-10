@@ -6,9 +6,9 @@ use crate::dap_states::{
 };
 
 #[derive(Debug)]
-pub struct QueryStackTraces;
+pub struct QueryVariables;
 
-impl DapStateHandler for QueryStackTraces {
+impl DapStateHandler for QueryVariables {
     fn next_requests(
         &self,
         context: &DapContext,
@@ -19,9 +19,7 @@ impl DapStateHandler for QueryStackTraces {
             .expect("current state expects initialized program state");
 
         // TODO:
-        // 1) stackTrace request for threads -> we get a stackFrame per thread back
-        // 2) scopes request for stackFrame -> we get a scope with variablesReference back
-        // 3) variables request for scope -> we get variables yay
+        // 1) variables request for scope -> we get variables yay
 
         None
     }
