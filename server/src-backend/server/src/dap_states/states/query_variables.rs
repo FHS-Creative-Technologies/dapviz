@@ -1,9 +1,11 @@
-use dap_types::types::ResponseBody;
+use dap_types::types::{RequestArguments, ResponseBody};
 
 use crate::dap_states::{
     dap_state::{DapState, DapStateHandler},
-    dap_state_machine::DapContext,
+    dap_state_machine::{DapContext, VariableInfo},
 };
+
+use super::wait_for_user_input::WaitForUserInput;
 
 #[derive(Debug)]
 pub struct QueryVariables;
@@ -18,10 +20,25 @@ impl DapStateHandler for QueryVariables {
             .as_ref()
             .expect("current state expects initialized program state");
 
-        // TODO:
-        // 1) variables request for scope -> we get variables yay
+        let next_variables_request = program_state
+            .threads
+            .iter()
+            .filter_map(|thread| thread.stack_frames.as_ref())
+            .flatten()
+            .filter_map(|frame| frame.scopes.as_ref())
+            .flatten()
+            .find(|scope| scope.variables.is_none())
+            .map(|unqueried_scope| {
+                RequestArguments::variables(dap_types::types::VariablesArguments {
+                    variables_reference: unqueried_scope.variables_reference,
+                    count: None,
+                    filter: None,
+                    format: None,
+                    start: None,
+                })
+            });
 
-        None
+        next_variables_request.map(|request| [request].into())
     }
 
     fn handle_response(
@@ -31,11 +48,46 @@ impl DapStateHandler for QueryVariables {
     ) -> Option<DapState> {
         let program_state = context
             .program_state
-            .as_ref()
+            .as_mut()
             .expect("current state expects initialized program state");
 
+        let scopes_count = program_state
+            .threads
+            .iter()
+            .filter_map(|thread| thread.stack_frames.as_ref())
+            .flatten()
+            .filter_map(|frame| frame.scopes.as_ref())
+            .flatten()
+            .count();
+
+        let current_scope = program_state
+            .threads
+            .iter_mut()
+            .filter_map(|thread| thread.stack_frames.as_mut())
+            .flatten()
+            .filter_map(|frame| frame.scopes.as_mut())
+            .flatten()
+            .enumerate()
+            .find(|(_, scope)| scope.variables.is_none());
+
         match response {
-            ResponseBody::threads(threads) => None,
+            ResponseBody::variables(variables) => {
+                Some(current_scope.map_or(WaitForUserInput.into(), |(i, scope)| {
+                    scope.variables = variables
+                        .variables
+                        .iter()
+                        .cloned()
+                        .map(VariableInfo::from)
+                        .collect::<Vec<_>>()
+                        .into();
+
+                    if i == scopes_count - 1 {
+                        WaitForUserInput.into()
+                    } else {
+                        QueryVariables.into()
+                    }
+                }))
+            }
             _ => {
                 tracing::error!("Unexpected response: {:?}", response);
                 None

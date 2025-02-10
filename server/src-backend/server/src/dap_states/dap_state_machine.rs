@@ -11,9 +11,21 @@ use super::{
     states::uninitialized::Uninitialized,
 };
 
+impl From<dap_types::types::Variable> for VariableInfo {
+    fn from(value: dap_types::types::Variable) -> Self {
+        VariableInfo {
+            id: value.variables_reference,
+            name: value.name,
+            value: value.value,
+        }
+    }
+}
+
 #[derive(Serialize, Clone, Debug, Default)]
 pub struct VariableInfo {
     pub id: i64,
+    pub name: String,
+    pub value: String,
 }
 
 impl From<dap_types::types::Scope> for ScopeInfo {
