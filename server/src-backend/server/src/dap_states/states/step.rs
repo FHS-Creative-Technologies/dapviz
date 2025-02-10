@@ -5,7 +5,7 @@ use crate::dap_states::{
     dap_state_machine::DapContext,
 };
 
-use super::wait_for_user_input::WaitForUserInput;
+use super::wait_for_breakpoint_hit::WaitForBreakpointHit;
 
 #[derive(Debug)]
 pub struct Step(pub i64);
@@ -28,7 +28,7 @@ impl DapStateHandler for Step {
         response: &dap_types::types::ResponseBody,
     ) -> Option<DapState> {
         match response {
-            dap_types::types::ResponseBody::next(..) => Some(WaitForUserInput.into()),
+            dap_types::types::ResponseBody::next(..) => Some(WaitForBreakpointHit.into()),
             _ => {
                 tracing::error!("Unexpected response: {:?}", response);
                 None
