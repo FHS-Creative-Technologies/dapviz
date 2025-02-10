@@ -71,7 +71,6 @@ impl DapStateHandler for QueryScopes {
                     stack_frame.scopes = scopes
                         .scopes
                         .iter()
-                        .cloned()
                         .map(ScopeInfo::from)
                         .collect::<Vec<_>>()
                         .into();

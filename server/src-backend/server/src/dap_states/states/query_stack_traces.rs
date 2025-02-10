@@ -69,7 +69,6 @@ impl DapStateHandler for QueryStackTraces {
                             stack_trace
                                 .stack_frames
                                 .iter()
-                                .cloned()
                                 .map(StackFrameInfo::from)
                                 .collect(),
                         );

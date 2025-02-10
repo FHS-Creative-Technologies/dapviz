@@ -76,7 +76,6 @@ impl DapStateHandler for QueryVariables {
                     scope.variables = variables
                         .variables
                         .iter()
-                        .cloned()
                         .map(VariableInfo::from)
                         .collect::<Vec<_>>()
                         .into();

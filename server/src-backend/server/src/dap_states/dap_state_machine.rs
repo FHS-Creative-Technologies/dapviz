@@ -11,12 +11,12 @@ use super::{
     states::uninitialized::Uninitialized,
 };
 
-impl From<dap_types::types::Variable> for VariableInfo {
-    fn from(value: dap_types::types::Variable) -> Self {
+impl From<&dap_types::types::Variable> for VariableInfo {
+    fn from(value: &dap_types::types::Variable) -> Self {
         VariableInfo {
             id: value.variables_reference,
-            name: value.name,
-            value: value.value,
+            name: value.name.clone(),
+            value: value.value.clone(),
         }
     }
 }
@@ -28,8 +28,8 @@ pub struct VariableInfo {
     pub value: String,
 }
 
-impl From<dap_types::types::Scope> for ScopeInfo {
-    fn from(value: dap_types::types::Scope) -> Self {
+impl From<&dap_types::types::Scope> for ScopeInfo {
+    fn from(value: &dap_types::types::Scope) -> Self {
         ScopeInfo {
             variables_reference: value.variables_reference,
             variables: None,
@@ -43,8 +43,8 @@ pub struct ScopeInfo {
     pub variables: Option<Vec<VariableInfo>>,
 }
 
-impl From<dap_types::types::StackFrame> for StackFrameInfo {
-    fn from(value: dap_types::types::StackFrame) -> Self {
+impl From<&dap_types::types::StackFrame> for StackFrameInfo {
+    fn from(value: &dap_types::types::StackFrame) -> Self {
         StackFrameInfo {
             id: value.id,
             scopes: None,
