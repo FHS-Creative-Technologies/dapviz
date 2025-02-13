@@ -92,6 +92,12 @@ impl From<&dap_types::types::StackFrame> for StackFrameInfo {
     fn from(value: &dap_types::types::StackFrame) -> Self {
         StackFrameInfo {
             id: value.id,
+            file: value
+                .source
+                .clone()
+                .map(|source| source.path.unwrap_or("[[Source File not provided]]".into()))
+                .unwrap_or("[[Source File not provided]]".into()),
+            line: value.line,
             scopes: None,
         }
     }
@@ -101,6 +107,8 @@ impl From<&dap_types::types::StackFrame> for StackFrameInfo {
 pub struct StackFrameInfo {
     #[serde(skip)]
     pub id: i64,
+    pub file: String,
+    pub line: i64,
     pub scopes: Option<Vec<ScopeInfo>>,
 }
 
