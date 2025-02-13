@@ -2,13 +2,70 @@ use dap_types::types::{RequestArguments, ResponseBody};
 
 use crate::dap_states::{
     dap_state::{DapState, DapStateHandler},
-    dap_state_machine::{DapContext, VariableInfo},
+    dap_state_machine::{DapContext, ProgramState, ScopeInfo, UnqueriedVariableInfo, VariableInfo},
 };
 
 use super::wait_for_user_input::WaitForUserInput;
 
 #[derive(Debug)]
 pub struct QueryVariables;
+
+enum NextRef<'a> {
+    Scope(&'a ScopeInfo),
+    Variable(&'a UnqueriedVariableInfo),
+}
+
+enum NextRefMut<'a> {
+    Scope(&'a mut ScopeInfo),
+    Variable(&'a mut ScopeInfo, usize),
+}
+
+impl ProgramState {
+    fn next_variable_request(&self) -> Option<NextRef<'_>> {
+        self.threads
+            .iter()
+            .filter_map(|thread| thread.stack_frames.as_ref())
+            .flatten()
+            .filter_map(|frame| frame.scopes.as_ref())
+            .flatten()
+            .filter_map(|scope| match scope.variables {
+                Some(ref scope_variables) => scope_variables
+                    .iter()
+                    .filter_map(|variable| match variable {
+                        VariableInfo::Queried(..) => None,
+                        VariableInfo::Unqueried(unqueried) => Some(NextRef::Variable(unqueried)),
+                    })
+                    .next(),
+                None => Some(NextRef::Scope(scope)),
+            })
+            .next()
+    }
+
+    fn next_variable_request_mut(&mut self) -> Option<NextRefMut<'_>> {
+        self.threads
+            .iter_mut()
+            .filter_map(|thread| thread.stack_frames.as_mut())
+            .flatten()
+            .filter_map(|frame| frame.scopes.as_mut())
+            .flatten()
+            .filter_map(|scope| match scope.variables.clone() {
+                Some(ref scope_variables) => {
+                    let variable_index = scope_variables
+                        .iter()
+                        .enumerate()
+                        .filter_map(|(i, variable)| match variable {
+                            VariableInfo::Queried(..) => None,
+                            VariableInfo::Unqueried(..) => Some(i),
+                        })
+                        .next();
+
+                    variable_index.map(|i| NextRefMut::Variable(scope, i))
+                }
+                None => Some(NextRefMut::Scope(scope)),
+            })
+            .next()
+    }
+}
 
 impl DapStateHandler for QueryVariables {
     fn next_requests(
@@ -20,25 +77,26 @@ impl DapStateHandler for QueryVariables {
             .as_ref()
             .expect("current state expects initialized program state");
 
-        let next_variables_request = program_state
-            .threads
-            .iter()
-            .filter_map(|thread| thread.stack_frames.as_ref())
-            .flatten()
-            .filter_map(|frame| frame.scopes.as_ref())
-            .flatten()
-            .find(|scope| scope.variables.is_none())
-            .map(|unqueried_scope| {
-                RequestArguments::variables(dap_types::types::VariablesArguments {
-                    variables_reference: unqueried_scope.variables_reference,
+        let next_variables_reference =
+            program_state
+                .next_variable_request()
+                .map(|request| match request {
+                    NextRef::Scope(scope) => scope.variables_reference,
+                    NextRef::Variable(variable) => variable.variables_reference,
+                });
+
+        next_variables_reference.map(|reference| {
+            [RequestArguments::variables(
+                dap_types::types::VariablesArguments {
+                    variables_reference: reference,
                     count: None,
                     filter: None,
                     format: None,
                     start: None,
-                })
-            });
-
-        next_variables_request.map(|request| [request].into())
+                },
+            )]
+            .into()
+        })
     }
 
     fn handle_response(
@@ -51,46 +109,48 @@ impl DapStateHandler for QueryVariables {
             .as_mut()
             .expect("current state expects initialized program state");
 
-        let scopes_count = program_state
-            .threads
-            .iter()
-            .filter_map(|thread| thread.stack_frames.as_ref())
-            .flatten()
-            .filter_map(|frame| frame.scopes.as_ref())
-            .flatten()
-            .count();
+        let ResponseBody::variables(response) = response else {
+            tracing::error!("Unexpected response: {:?}", response);
+            return None;
+        };
 
-        let current_scope = program_state
-            .threads
-            .iter_mut()
-            .filter_map(|thread| thread.stack_frames.as_mut())
-            .flatten()
-            .filter_map(|frame| frame.scopes.as_mut())
-            .flatten()
-            .enumerate()
-            .find(|(_, scope)| scope.variables.is_none());
+        let next_requested = program_state.next_variable_request_mut();
 
-        match response {
-            ResponseBody::variables(variables) => {
-                Some(current_scope.map_or(WaitForUserInput.into(), |(i, scope)| {
-                    scope.variables = variables
+        match next_requested
+            .expect("received response even though we have no more variable requests")
+        {
+            NextRefMut::Scope(scope) => {
+                scope.variables = response
+                    .variables
+                    .iter()
+                    .map(VariableInfo::from)
+                    .collect::<Vec<_>>()
+                    .into()
+            }
+            NextRefMut::Variable(scope, variable_index) => {
+                let variables = scope
+                    .variables
+                    .as_mut()
+                    .expect("next ref must not return variable if scope has no variables");
+
+                // TODO: can we get rid of this clone?
+                variables[variable_index] = variables[variable_index].clone().into_queried();
+
+                variables.append(
+                    &mut response
                         .variables
                         .iter()
-                        .map(VariableInfo::from)
-                        .collect::<Vec<_>>()
-                        .into();
+                        .map(|v| VariableInfo::from(v).with_parent(variable_index))
+                        .collect::<Vec<_>>(),
+                );
+            }
+        }
 
-                    if i == scopes_count - 1 {
-                        WaitForUserInput.into()
-                    } else {
-                        QueryVariables.into()
-                    }
-                }))
-            }
-            _ => {
-                tracing::error!("Unexpected response: {:?}", response);
-                None
-            }
+        let next_requested = program_state.next_variable_request();
+
+        match next_requested {
+            None => Some(WaitForUserInput.into()),
+            Some(..) => Some(QueryVariables.into()),
         }
     }
 }

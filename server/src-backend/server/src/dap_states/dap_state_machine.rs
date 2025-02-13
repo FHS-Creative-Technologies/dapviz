@@ -13,19 +13,74 @@ use super::{
 
 impl From<&dap_types::types::Variable> for VariableInfo {
     fn from(value: &dap_types::types::Variable) -> Self {
-        VariableInfo {
-            id: value.variables_reference,
-            name: value.name.clone(),
-            value: value.value.clone(),
+        match value.variables_reference {
+            0 => VariableInfo::Queried(QueriedVariableInfo {
+                parent: None,
+                name: value.name.clone(),
+                value: value.value.clone(),
+            }),
+            reference => VariableInfo::Unqueried(UnqueriedVariableInfo {
+                parent: None,
+                variables_reference: reference,
+                name: value.name.clone(),
+                value: value.value.clone(),
+            }),
+        }
+    }
+}
+
+impl VariableInfo {
+    pub fn with_parent(self, parent: usize) -> Self {
+        match self {
+            VariableInfo::Queried(queried_variable_info) => {
+                VariableInfo::Queried(QueriedVariableInfo {
+                    parent: Some(parent),
+                    ..queried_variable_info
+                })
+            }
+            VariableInfo::Unqueried(unqueried_variable_info) => {
+                VariableInfo::Unqueried(UnqueriedVariableInfo {
+                    parent: Some(parent),
+                    ..unqueried_variable_info
+                })
+            }
+        }
+    }
+
+    pub fn into_queried(self) -> Self {
+        match self {
+            VariableInfo::Queried(..) => self,
+            VariableInfo::Unqueried(unqueried_variable_info) => {
+                VariableInfo::Queried(QueriedVariableInfo {
+                    parent: unqueried_variable_info.parent,
+                    name: unqueried_variable_info.name,
+                    value: unqueried_variable_info.value,
+                })
+            }
         }
     }
 }
 
 #[derive(Serialize, Clone, Debug, Default)]
-pub struct VariableInfo {
-    pub id: i64,
+pub struct QueriedVariableInfo {
+    pub parent: Option<usize>,
     pub name: String,
     pub value: String,
+}
+
+#[derive(Serialize, Clone, Debug, Default)]
+pub struct UnqueriedVariableInfo {
+    pub parent: Option<usize>,
+    pub variables_reference: i64,
+    pub name: String,
+    pub value: String,
+}
+
+#[derive(Serialize, Clone, Debug)]
+#[serde(untagged)]
+pub enum VariableInfo {
+    Queried(QueriedVariableInfo),
+    Unqueried(UnqueriedVariableInfo),
 }
 
 impl From<&dap_types::types::Scope> for ScopeInfo {
