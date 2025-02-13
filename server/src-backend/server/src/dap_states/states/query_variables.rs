@@ -2,7 +2,7 @@ use dap_types::types::{RequestArguments, ResponseBody};
 
 use crate::dap_states::{
     dap_state::{DapState, DapStateHandler},
-    dap_state_machine::{DapContext, ProgramState, ScopeInfo, UnqueriedVariableInfo, VariableInfo},
+    dap_state_machine::{DapContext, ProgramState, ScopeInfo, VariableInfo},
 };
 
 use super::wait_for_user_input::WaitForUserInput;
@@ -12,7 +12,7 @@ pub struct QueryVariables;
 
 enum NextRef<'a> {
     Scope(&'a ScopeInfo),
-    Variable(&'a UnqueriedVariableInfo),
+    Variable(i64),
 }
 
 enum NextRefMut<'a> {
@@ -33,7 +33,7 @@ impl ProgramState {
                     .iter()
                     .filter_map(|variable| match variable {
                         VariableInfo::Queried(..) => None,
-                        VariableInfo::Unqueried(unqueried) => Some(NextRef::Variable(unqueried)),
+                        VariableInfo::Unqueried(reference, _) => Some(NextRef::Variable(*reference)),
                     })
                     .next(),
                 None => Some(NextRef::Scope(scope)),
@@ -82,7 +82,7 @@ impl DapStateHandler for QueryVariables {
                 .next_variable_request()
                 .map(|request| match request {
                     NextRef::Scope(scope) => scope.variables_reference,
-                    NextRef::Variable(variable) => variable.variables_reference,
+                    NextRef::Variable(reference) => reference,
                 });
 
         next_variables_reference.map(|reference| {

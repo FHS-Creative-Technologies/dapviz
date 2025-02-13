@@ -13,18 +13,19 @@ use super::{
 
 impl From<&dap_types::types::Variable> for VariableInfo {
     fn from(value: &dap_types::types::Variable) -> Self {
+        let data = VariableInfoData {
+            parent: None,
+            name: value.name.clone(),
+            value: value.value.clone(),
+            type_: value
+                .type_
+                .clone()
+                .unwrap_or("[[Type not provided]]".into()),
+        };
+
         match value.variables_reference {
-            0 => VariableInfo::Queried(QueriedVariableInfo {
-                parent: None,
-                name: value.name.clone(),
-                value: value.value.clone(),
-            }),
-            reference => VariableInfo::Unqueried(UnqueriedVariableInfo {
-                parent: None,
-                variables_reference: reference,
-                name: value.name.clone(),
-                value: value.value.clone(),
-            }),
+            0 => VariableInfo::Queried(data),
+            reference => VariableInfo::Unqueried(reference, data),
         }
     }
 }
@@ -32,55 +33,43 @@ impl From<&dap_types::types::Variable> for VariableInfo {
 impl VariableInfo {
     pub fn with_parent(self, parent: usize) -> Self {
         match self {
-            VariableInfo::Queried(queried_variable_info) => {
-                VariableInfo::Queried(QueriedVariableInfo {
+            VariableInfo::Queried(data) => VariableInfo::Queried(VariableInfoData {
+                parent: Some(parent),
+                ..data
+            }),
+            VariableInfo::Unqueried(reference, data) => VariableInfo::Unqueried(
+                reference,
+                VariableInfoData {
                     parent: Some(parent),
-                    ..queried_variable_info
-                })
-            }
-            VariableInfo::Unqueried(unqueried_variable_info) => {
-                VariableInfo::Unqueried(UnqueriedVariableInfo {
-                    parent: Some(parent),
-                    ..unqueried_variable_info
-                })
-            }
+                    ..data
+                },
+            ),
         }
     }
 
     pub fn into_queried(self) -> Self {
         match self {
             VariableInfo::Queried(..) => self,
-            VariableInfo::Unqueried(unqueried_variable_info) => {
-                VariableInfo::Queried(QueriedVariableInfo {
-                    parent: unqueried_variable_info.parent,
-                    name: unqueried_variable_info.name,
-                    value: unqueried_variable_info.value,
-                })
-            }
+            VariableInfo::Unqueried(_, data) => VariableInfo::Queried(data),
         }
     }
 }
 
 #[derive(Serialize, Clone, Debug, Default)]
-pub struct QueriedVariableInfo {
+pub struct VariableInfoData {
     pub parent: Option<usize>,
     pub name: String,
     pub value: String,
-}
 
-#[derive(Serialize, Clone, Debug, Default)]
-pub struct UnqueriedVariableInfo {
-    pub parent: Option<usize>,
-    pub variables_reference: i64,
-    pub name: String,
-    pub value: String,
+    #[serde(rename = "type")]
+    pub type_: String,
 }
 
 #[derive(Serialize, Clone, Debug)]
 #[serde(untagged)]
 pub enum VariableInfo {
-    Queried(QueriedVariableInfo),
-    Unqueried(UnqueriedVariableInfo),
+    Queried(VariableInfoData),
+    Unqueried(i64, VariableInfoData),
 }
 
 impl From<&dap_types::types::Scope> for ScopeInfo {
@@ -94,6 +83,7 @@ impl From<&dap_types::types::Scope> for ScopeInfo {
 
 #[derive(Serialize, Clone, Debug, Default)]
 pub struct ScopeInfo {
+    #[serde(skip)]
     pub variables_reference: i64,
     pub variables: Option<Vec<VariableInfo>>,
 }
@@ -109,6 +99,7 @@ impl From<&dap_types::types::StackFrame> for StackFrameInfo {
 
 #[derive(Serialize, Clone, Debug, Default)]
 pub struct StackFrameInfo {
+    #[serde(skip)]
     pub id: i64,
     pub scopes: Option<Vec<ScopeInfo>>,
 }
