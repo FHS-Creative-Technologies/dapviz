@@ -1,4 +1,4 @@
-import { Grid, Html, MapControls } from "@react-three/drei";
+import { DragControls, Grid, Html, MapControls } from "@react-three/drei";
 import { ThreadInfo } from "./DapvizProvider";
 
 const BackgroundGrid = () => {
@@ -20,16 +20,26 @@ const BackgroundGrid = () => {
   );
 }
 
+const DebugJsonInfo = ({ thread }: { thread: ThreadInfo }) => {
+  return <DragControls>
+    <mesh>
+      <mesh position={[30, 5, 0]}>
+        <boxGeometry args={[60, 10, 1]} />
+      </mesh>
+      <Html distanceFactor={1}>
+        <details style={{ color: "white", pointerEvents: "all", position: "relative" }}>
+          <summary>Debug</summary>
+          <pre style={{ position: "absolute" }}>{JSON.stringify(thread, null, 2)}</pre>
+        </details>
+      </Html>
+    </mesh>
+  </DragControls>
+}
+
 const Visualizer = ({ thread }: { thread: ThreadInfo }) => {
   return (
     <>
-      <mesh>
-        <Html distanceFactor={1}>
-          <pre style={{ color: "#FFFFFF" }}>
-            {JSON.stringify(thread, null, 2)}
-          </pre>
-        </Html>
-      </mesh>
+      <DebugJsonInfo thread={thread} />
       <BackgroundGrid />
       <MapControls maxZoom={2} minZoom={0.10} makeDefault />
     </>
