@@ -4,7 +4,8 @@ int a;
 int b = 44;
 float c = 32.4f;
 double d = 420.69;
-bool isThisBool = true;
+
+string favouriteFood = "pickles";
 
 int test(int a, int b)
 {
@@ -12,19 +13,21 @@ int test(int a, int b)
 }
 
 a = 43;
+
 int e = test(a, b);
+e = test((int)c, (int)d);
 
 var mat = new Matrix()
 {
     Row0 = new Vector
     {
         X = 0,
-        Y = 0,
+        Y = 1,
         Z = 0,
     },
     Row1 = new Vector
     {
-        X = 0,
+        X = 1,
         Y = 0,
         Z = 0,
     },
@@ -32,16 +35,25 @@ var mat = new Matrix()
     {
         X = 0,
         Y = 0,
-        Z = 0,
+        Z = 1,
     },
 };
+
+var vec = new Vector
+{
+    X = 42,
+    Y = 13,
+    Z = 37,
+};
+
+var result = mat.Apply(vec);
 
 for (int i = 0; i < 10; ++i)
 {
     Console.Write(i);
 }
 
-Console.WriteLine("Hello, World");
+Console.WriteLine($"Hello, World. I love eating {favouriteFood}");
 
 class Vector
 {
@@ -54,4 +66,14 @@ class Matrix
     public required Vector Row0 { get; init; }
     public required Vector Row1 { get; init; }
     public required Vector Row2 { get; init; }
+
+    public Vector Apply(Vector target)
+    {
+        return new Vector
+        {
+            X = Row0.X * target.X + Row0.Y * target.Y + Row0.Z * target.Z,
+            Y = Row1.X * target.X + Row1.Y * target.Y + Row1.Z * target.Z,
+            Z = Row2.X * target.X + Row2.Y * target.Y + Row2.Z * target.Z
+        };
+    }
 }
