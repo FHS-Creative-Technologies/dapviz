@@ -98,6 +98,7 @@ impl From<&dap_types::types::StackFrame> for StackFrameInfo {
                 .map(|source| source.path.unwrap_or("[[Source File not provided]]".into()))
                 .unwrap_or("[[Source File not provided]]".into()),
             line: value.line,
+            function: value.name.clone(),
             scopes: None,
         }
     }
@@ -109,6 +110,7 @@ pub struct StackFrameInfo {
     pub id: i64,
     pub file: String,
     pub line: i64,
+    pub function: String,
     pub scopes: Option<Vec<ScopeInfo>>,
 }
 
