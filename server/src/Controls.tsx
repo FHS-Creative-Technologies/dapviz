@@ -1,11 +1,9 @@
-import { useState } from "react";
 import { DapvizRequest, useDapviz } from "./DapvizProvider";
 
-const Controls = () => {
+const Controls = ({ currentThread, setCurrentThread }: { currentThread: number, setCurrentThread: React.Dispatch<React.SetStateAction<number>> }) => {
   const [programState, send] = useDapviz();
-  const [currentThread, setCurrentThread] = useState<number>(programState.threads[0].id);
 
-  const request = (request: DapvizRequest) => () => send(request, currentThread);
+  const request = (request: DapvizRequest) => () => send(request, programState.threads[currentThread].id);
 
   return (
     <div style={{
@@ -25,8 +23,8 @@ const Controls = () => {
       <button onClick={request(DapvizRequest.StepOut)} style={{ pointerEvents: "all" }}>Step Out</button>
       <select defaultValue={currentThread} onChange={(e) => setCurrentThread(+e.target.value)} style={{ pointerEvents: "all" }}>
         {
-          programState.threads.map((thread) => (
-            <option key={thread.id} value={thread.id}>{thread.name}</option>
+          programState.threads.map((thread, i) => (
+            <option key={i} value={i}>{thread.name}</option>
           ))
         }
       </select>

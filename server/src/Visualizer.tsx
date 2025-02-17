@@ -1,14 +1,13 @@
 import { Html, MapControls } from "@react-three/drei";
-import { useDapviz } from "./DapvizProvider";
+import { ThreadInfo } from "./DapvizProvider";
 
-const Visualizer = () => {
-  const [visualization,] = useDapviz();
+const Visualizer = ({ thread }: { thread: ThreadInfo }) => {
   return (
     <>
       <mesh>
         <Html distanceFactor={10}>
           <pre>
-            {JSON.stringify(visualization, null, 2)}
+            {JSON.stringify(thread, null, 2)}
           </pre>
         </Html>
       </mesh>

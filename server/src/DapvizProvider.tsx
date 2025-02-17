@@ -7,12 +7,12 @@ export enum DapvizRequest {
   StepOut = 3,
 }
 
-type ThreadInfo = {
+export type ThreadInfo = {
   id: number;
   name: string;
 };
 
-type ProgramState = {
+export type ProgramState = {
   threads: [ThreadInfo];
 };
 
