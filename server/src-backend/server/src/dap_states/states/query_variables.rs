@@ -33,7 +33,9 @@ impl ProgramState {
                     .iter()
                     .filter_map(|variable| match variable {
                         VariableInfo::Queried(..) => None,
-                        VariableInfo::Unqueried(reference, _) => Some(NextRef::Variable(*reference)),
+                        VariableInfo::Unqueried(variable) => {
+                            Some(NextRef::Variable(variable.reference))
+                        }
                     })
                     .next(),
                 None => Some(NextRef::Scope(scope)),
@@ -135,12 +137,20 @@ impl DapStateHandler for QueryVariables {
 
                 // TODO: can we get rid of this clone?
                 variables[variable_index] = variables[variable_index].clone().into_queried();
+                let variables_reference = match &variables[variable_index] {
+                    VariableInfo::Queried(variable_info_data) => {
+                        variable_info_data.reference
+                    }
+                    VariableInfo::Unqueried(variable_info_data) => {
+                        variable_info_data.reference
+                    }
+                };
 
                 variables.append(
                     &mut response
                         .variables
                         .iter()
-                        .map(|v| VariableInfo::from(v).with_parent(variable_index))
+                        .map(|v| VariableInfo::from(v).with_parent(variables_reference))
                         .collect::<Vec<_>>(),
                 );
             }

@@ -15,6 +15,7 @@ impl From<&dap_types::types::Variable> for VariableInfo {
     fn from(value: &dap_types::types::Variable) -> Self {
         let data = VariableInfoData {
             parent: None,
+            reference: value.variables_reference,
             name: value.name.clone(),
             value: value.value.clone(),
             type_: value
@@ -25,20 +26,19 @@ impl From<&dap_types::types::Variable> for VariableInfo {
 
         match value.variables_reference {
             0 => VariableInfo::Queried(data),
-            reference => VariableInfo::Unqueried(reference, data),
+            _ => VariableInfo::Unqueried(data),
         }
     }
 }
 
 impl VariableInfo {
-    pub fn with_parent(self, parent: usize) -> Self {
+    pub fn with_parent(self, parent: i64) -> Self {
         match self {
             VariableInfo::Queried(data) => VariableInfo::Queried(VariableInfoData {
                 parent: Some(parent),
                 ..data
             }),
-            VariableInfo::Unqueried(reference, data) => VariableInfo::Unqueried(
-                reference,
+            VariableInfo::Unqueried(data) => VariableInfo::Unqueried(
                 VariableInfoData {
                     parent: Some(parent),
                     ..data
@@ -50,14 +50,15 @@ impl VariableInfo {
     pub fn into_queried(self) -> Self {
         match self {
             VariableInfo::Queried(..) => self,
-            VariableInfo::Unqueried(_, data) => VariableInfo::Queried(data),
+            VariableInfo::Unqueried(data) => VariableInfo::Queried(data),
         }
     }
 }
 
 #[derive(Serialize, Clone, Debug, Default)]
 pub struct VariableInfoData {
-    pub parent: Option<usize>,
+    pub parent: Option<i64>,
+    pub reference: i64,
     pub name: String,
     pub value: String,
 
@@ -69,7 +70,7 @@ pub struct VariableInfoData {
 #[serde(untagged)]
 pub enum VariableInfo {
     Queried(VariableInfoData),
-    Unqueried(i64, VariableInfoData),
+    Unqueried(VariableInfoData),
 }
 
 impl From<&dap_types::types::Scope> for ScopeInfo {
