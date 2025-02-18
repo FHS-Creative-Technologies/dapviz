@@ -14,7 +14,7 @@ const DapvizApp = () => {
 
   return (
     <>
-      <Canvas frameloop="demand" orthographic camera={{ position: [0, 0, 1], zoom: 1, up: [0, 0, 1], far: 10000 }}
+      <Canvas frameloop="demand" gl={{ localClippingEnabled: true }} orthographic camera={{ position: [0, 0, 7000], zoom: 1, up: [0, 0, 1], near: 0.1, far: 10000 }}
         style={{ height: "100%" }}>
         <Visualizer thread={programState.threads[currentThread]} />
       </Canvas>
