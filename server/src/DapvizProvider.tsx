@@ -7,9 +7,28 @@ export enum DapvizRequest {
   StepOut = 3,
 }
 
+export type Variable = {
+  parent: number | null;
+  name: string;
+  value: string;
+  type: string;
+};
+
+export type Scope = {
+  variables: [Variable];
+};
+
+export type StackFrame = {
+  file: string;
+  line: number;
+  function: string;
+  scopes: [Scope];
+};
+
 export type ThreadInfo = {
   id: number;
   name: string;
+  stack_frames: [StackFrame];
 };
 
 export type ProgramState = {
