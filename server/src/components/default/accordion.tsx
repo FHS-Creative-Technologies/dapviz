@@ -1,8 +1,8 @@
-import React, { ReactNode, RefAttributes, createContext, forwardRef, useContext, useState } from 'react'
-import { ContainerRef, Container, ContainerProperties, DefaultProperties } from '@react-three/uikit'
+import { ReactNode, RefAttributes, createContext, forwardRef, useContext, useState } from 'react'
+import { ContainerRef, Container, ContainerProperties } from '@react-three/uikit'
 import { ChevronDown } from '@react-three/uikit-lucide'
 
-const AccordionContext = createContext<[string | undefined, (value: string | undefined) => void]>(null as any)
+const AccordionContext = createContext<[string | undefined, (value: string | undefined) => void]>(null!)
 
 export type AccordionProperties = ContainerProperties
 
@@ -14,6 +14,7 @@ export function Accordion({ children, ...props }: AccordionProperties) {
     </Container>
   )
 }
+
 const AccordionItemContext = createContext<string>('')
 
 export type AccordionItemProperties = ContainerProperties & { value: string }

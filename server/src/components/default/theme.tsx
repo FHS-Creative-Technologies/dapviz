@@ -1,5 +1,4 @@
 import { basedOnPreferredColorScheme, DefaultProperties, DefaultPropertiesProperties } from '@react-three/uikit'
-import React from 'react'
 import { Color } from 'three'
 
 function hsl(h: number, s: number, l: number) {
