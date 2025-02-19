@@ -2,17 +2,17 @@ import { ReactNode, RefAttributes, createContext, forwardRef, useContext, useSta
 import { ContainerRef, Container, ContainerProperties } from '@react-three/uikit'
 import { ChevronDown } from '@react-three/uikit-lucide'
 
-const AccordionContext = createContext<[string | undefined, (value: string | undefined) => void]>(null!)
+const AccordionContext = createContext<[string[], (value: string[]) => void]>(null!)
 
 export type AccordionProperties = ContainerProperties
 
 export function Accordion({ children, ...props }: AccordionProperties) {
-  const stateHandler = useState<string | undefined>(undefined)
+  const openAccordionsState = useState<string[]>([]);
   return (
     <Container flexDirection="column" {...props}>
-      <AccordionContext.Provider value={stateHandler}>{children}</AccordionContext.Provider>
+      <AccordionContext.Provider value={openAccordionsState}>{children}</AccordionContext.Provider>
     </Container>
-  )
+  );
 }
 
 const AccordionItemContext = createContext<string>('')
@@ -39,8 +39,9 @@ export type AccordionTriggerProperties = ContainerProperties
 export const AccordionTrigger: (props: RefAttributes<ContainerRef> & AccordionTriggerProperties) => ReactNode =
   forwardRef(({ children, ...props }, ref) => {
     const itemValue = useContext(AccordionItemContext)
-    const [value, setValue] = useContext(AccordionContext)
-    const isSelected = itemValue === value
+    const [openAccordions, setOpenAccordions] = useContext(AccordionContext)
+    const isSelected = openAccordions.includes(itemValue);
+
     return (
       <Container
         flexDirection="row"
@@ -50,7 +51,13 @@ export const AccordionTrigger: (props: RefAttributes<ContainerRef> & AccordionTr
         justifyContent="space-between"
         paddingY={16}
         ref={ref}
-        onClick={() => setValue(isSelected ? undefined : itemValue)}
+        onClick={() => {
+          setOpenAccordions(
+            isSelected
+              ? openAccordions.filter((value) => value != itemValue)
+              : openAccordions.concat([itemValue])
+          );
+        }}
         {...props}
       >
         {children}
@@ -64,10 +71,13 @@ export type AccordionContentProperties = ContainerProperties
 export const AccordionContent: (props: RefAttributes<ContainerRef> & AccordionContentProperties) => ReactNode =
   forwardRef(({ children, ...props }, ref) => {
     const itemValue = useContext(AccordionItemContext)
-    const [value] = useContext(AccordionContext)
-    if (value != itemValue) {
+    const [openAccordions] = useContext(AccordionContext)
+
+    const isSelected = openAccordions.includes(itemValue);
+    if (!isSelected) {
       return null
     }
+
     return (
       <Container overflow="hidden" ref={ref} {...props}>
         {children}
