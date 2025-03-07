@@ -21,6 +21,30 @@ const ensureDapvizInstall = async (context: vscode.ExtensionContext): Promise<st
         return executablePath;
 };
 
+const highlightDecoration = vscode.window.createTextEditorDecorationType({
+    backgroundColor: 'rgba(245, 201, 58, 0.4)',
+    isWholeLine: true,
+});
+
+const highlightLine = async (filePath: string, line: number) => {
+    const document = await vscode.workspace.openTextDocument(filePath);
+    const editor = await vscode.window.showTextDocument(document, vscode.ViewColumn.Active);
+
+    if (!editor) {
+        vscode.window.showErrorMessage(`Could not open file: ${filePath}`);
+        return () => {};
+    }
+
+    const range = new vscode.Range(line, 0, line, document.lineAt(line).text.length);
+
+    editor.setDecorations(highlightDecoration, [range]);
+    editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+
+    return () => {
+        editor.setDecorations(highlightDecoration, []);
+    };
+};
+
 export default async (context: vscode.ExtensionContext) => {
     const dapvizPath = await ensureDapvizInstall(context);
     const workspacePath = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
@@ -44,4 +68,13 @@ export default async (context: vscode.ExtensionContext) => {
         {
             viewColumn: vscode.ViewColumn.Beside
         });
+    
+    let clearPreviousHighlight: (() => void) | null = null;
+    const onWebviewMessage = async () => {
+        clearPreviousHighlight?.();
+
+        clearPreviousHighlight = await highlightLine("/Users/thekatze/Development/dapviz/playground/csharp/Program.cs", 11);
+    };
+
+    onWebviewMessage();
 };
