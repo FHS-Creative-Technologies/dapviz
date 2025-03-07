@@ -26,11 +26,13 @@ export const getOs = () => {
 
 export const getBinariesFolder = (context: vscode.ExtensionContext) => {
    return context.asAbsolutePath("bin");
-}
+};
 
 export const getExecutablePath = (context: vscode.ExtensionContext) => {
     const os = getOs();
-    if (!os) return null;
+    if (!os) {
+        return null;
+    }
 
-    return path.join(getBinariesFolder(context), os == Os.Windows ? "dapviz.exe" : "dapviz");
-}
+    return path.join(getBinariesFolder(context), os === Os.Windows ? "dapviz.exe" : "dapviz");
+};

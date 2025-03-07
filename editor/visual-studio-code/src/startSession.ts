@@ -10,8 +10,8 @@ const ensureDapvizInstall = async (context: vscode.ExtensionContext): Promise<st
         const executablePath = getExecutablePath(context);
 
         if (!executablePath) {
-            vscode.window.showErrorMessage("Unsupported platform:", platform())
-            throw "Unsupported platform";
+            vscode.window.showErrorMessage("Unsupported platform:", platform());
+            throw new Error("Unsupported platform");
         }
 
         if (!existsSync(executablePath)) {
@@ -34,7 +34,7 @@ export default async (context: vscode.ExtensionContext) => {
         terminal.sendText(`${dapvizPath} -p ${PORT} --language c-sharp ${executablePath}`);
         terminal.show(true);
     } catch (e) {
-        vscode.window.showErrorMessage("Could not start terminal command:", JSON.stringify(e))
+        vscode.window.showErrorMessage("Could not start terminal command:", JSON.stringify(e));
         return;
     }
 
