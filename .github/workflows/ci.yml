@@ -1,0 +1,32 @@
+name: Continuous Integration
+
+on:
+  pull_request:
+    branches:
+      - main
+
+env: 
+  CARGO_TERM_COLOR: always
+
+jobs:
+  ci-server:
+    name: Run CI for server
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 23
+          cache: 'pnpm'
+          cache-dependency-path: 'server/pnpm-lock.yaml'
+      - name: Setup Rust
+        # TODO: consider caching: https://github.com/marketplace/actions/rust-cache
+        run: cd server/src-backend/ && rustup update
+      - name: Run checks
+        run: cd server && pnpm install --frozen-lockfile && pnpm lint
+
