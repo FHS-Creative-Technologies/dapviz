@@ -25,11 +25,11 @@ jobs:
           node-version: 23
           cache: 'pnpm'
       - name: Setup Rust
-      - run: |
+        run: |
           pushd server/src-backend/
           pwd
           rustup update
           popd
       - name: Run checks
-      - run: cd src-backend && pnpm install --frozen-lockfile && pnpm lint
+        run: cd src-backend && pnpm install --frozen-lockfile && pnpm lint
 
