@@ -28,11 +28,7 @@ jobs:
           cache: 'pnpm'
           cache-dependency-path: 'server/pnpm-lock.yaml'
       - name: Setup Rust
-        run: |
-          pushd server/src-backend/
-          pwd
-          rustup update
-          popd
+        run: cd server/src-backend/ && rustup update
       - name: Run checks
-        run: cd src-backend && pnpm install --frozen-lockfile && pnpm lint
+        run: cd server && pnpm install --frozen-lockfile && pnpm lint
 
