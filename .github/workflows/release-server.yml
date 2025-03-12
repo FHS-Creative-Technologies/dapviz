@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - v**
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  release-build-server:
+    name: Build server
+
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - os: ubuntu-latest
+            toolchain: x86_64-unknown-linux-gnu
+            artifact_name: dapviz
+            asset_name: dapviz-linux-gnu-amd64
+          - os: macos-latest
+            toolchain: aarch64-apple-darwin
+            artifact_name: dapviz
+            asset_name: dapviz-macos-arm64
+          - os: windows-latest
+            toolchain: x86_64-pc-windows-msvc
+            artifact_name: dapviz.exe
+            asset_name: dapviz-windows-amd64
+            
+    runs-on: ${{ matrix.platform.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 23
+          cache: ${{ matrix.platform.os != 'windows-latest' && 'pnpm' || null }}
+          cache-dependency-path: ${{ matrix.platform.os != 'windows-latest' && 'server/pnpm-lock.yaml' || null }}
+
+      - name: Setup Rust
+        run: cd server/src-backend/ && rustup target add ${{ matrix.platform.toolchain }}
+
+      - name: Release Build
+        run: |
+          cd server && pnpm install --frozen-lockfile && pnpm build:js
+          cd src-backend && cargo build --release --target ${{ matrix.platform.toolchain }}
+
+      - name: Rename Artifact
+        run: |
+          mv "server/src-backend/target/${{ matrix.platform.toolchain }}/release/${{ matrix.platform.artifact_name }}" "${{ matrix.platform.toolchain }}_${{ matrix.platform.artifact_name }}"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform.asset_name }}
+          path: "${{ matrix.platform.toolchain }}_${{ matrix.platform.artifact_name }}"
+          if-no-files-found: error
+
+  release:
+    name: Create Release
+    needs: release-build-server
+    permissions:
+      # required to create a release
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/dapviz-linux-gnu-amd64/*
+            artifacts/dapviz-macos-arm64/*
+            artifacts/dapviz-windows-amd64/*
