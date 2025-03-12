@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { basedOnPreferredColorScheme, DefaultProperties, DefaultPropertiesProperties } from '@react-three/uikit'
 import { Color } from 'three'
 

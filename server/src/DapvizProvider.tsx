@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- if this file gets changed, we don't care about fast refresh */
 import { createContext, ReactElement, ReactNode, useContext, useEffect, useState } from "react";
 
 // align these values with `impl TryFrom<Message> for UserRequest` block

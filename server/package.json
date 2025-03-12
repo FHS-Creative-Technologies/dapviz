@@ -10,7 +10,9 @@
     "build": "npm run build:js && npm run build:rust",
     "build:js": "tsc && vite build",
     "build:rust": "cd src-backend && cargo build --release",
-    "lint": "eslint src/"
+    "lint": "npm run lint:js && npm run lint:rust",
+    "lint:js": "eslint src/",
+    "lint:rust": "cd src-backend && cargo check"
   },
   "dependencies": {
     "@react-three/drei": "^9.121.4",
