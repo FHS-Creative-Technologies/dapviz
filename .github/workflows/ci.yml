@@ -1,9 +1,6 @@
-name: CI
+name: Continuous Integration
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
@@ -28,6 +25,7 @@ jobs:
           cache: 'pnpm'
           cache-dependency-path: 'server/pnpm-lock.yaml'
       - name: Setup Rust
+        # TODO: consider caching: https://github.com/marketplace/actions/rust-cache
         run: cd server/src-backend/ && rustup update
       - name: Run checks
         run: cd server && pnpm install --frozen-lockfile && pnpm lint
