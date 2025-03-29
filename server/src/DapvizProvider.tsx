@@ -10,6 +10,7 @@ export enum DapvizRequest {
 
 export type Variable = {
   parent: number | null;
+  reference: number;
   name: string;
   value: string;
   type: string;
