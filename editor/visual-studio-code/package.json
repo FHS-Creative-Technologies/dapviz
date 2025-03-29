@@ -2,7 +2,7 @@
   "name": "dapviz",
   "displayName": "dapviz",
   "description": "Visualizes running programs",
-  "version": "0.0.1",
+  "version": "0.0.0",
   "engines": {
     "vscode": "^1.97.0"
   },
@@ -16,6 +16,11 @@
       {
         "command": "dapviz.startSession",
         "title": "Start session",
+        "category": "dapviz"
+      },
+      {
+        "command": "dapviz.downloadBinaries",
+        "title": "Update backend",
         "category": "dapviz"
       }
     ]

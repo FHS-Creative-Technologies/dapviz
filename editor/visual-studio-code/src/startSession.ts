@@ -1,18 +1,15 @@
 import { existsSync } from 'fs';
 import { platform } from 'os';
 import * as vscode from 'vscode';
-import { getExecutablePath } from './shared';
+import { getExecutablePath, getOs } from './shared';
 
 // TODO: make this configurable in extension settings
 const PORT = 5173;
 
 const ensureDapvizInstall = async (context: vscode.ExtensionContext): Promise<string> => {
-        const executablePath = getExecutablePath(context);
+        const os = getOs();
 
-        if (!executablePath) {
-            vscode.window.showErrorMessage("Unsupported platform:", platform());
-            throw new Error("Unsupported platform");
-        }
+        const executablePath = getExecutablePath(context, os);
 
         if (!existsSync(executablePath)) {
             await vscode.commands.executeCommand("dapviz.downloadBinaries");

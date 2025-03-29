@@ -8,8 +8,12 @@ enum Os {
     Windows = "win",
 }
 
+/**
+ * @throws if platform is unsupported
+ * @returns Operating system if platform is supported
+ */
 export const getOs = () => {
-    return {
+    const os = {
         freebsd: Os.Linux,
         openbsd: Os.Linux,
         netbsd: Os.Linux,
@@ -22,17 +26,27 @@ export const getOs = () => {
         aix: null,
         android: null,
     }[platform()];
+
+    if (!os) {
+        vscode.window.showErrorMessage("Unsupported platform:", platform());
+        throw new Error("Unsupported platform");
+    }
+
+    return os;
 };
 
 export const getBinariesFolder = (context: vscode.ExtensionContext) => {
    return context.asAbsolutePath("bin");
 };
 
-export const getExecutablePath = (context: vscode.ExtensionContext) => {
-    const os = getOs();
-    if (!os) {
-        return null;
-    }
+export const getExecutableName = (os: Os) => {
+    return {
+        [Os.Windows]: "x86_64-pc-windows-msvc_dapviz.exe",
+        [Os.MacOS]: "aarch64-apple-darwin_dapviz",
+        [Os.Linux]: "x86_64-unknown-linux-gnu_dapviz",
+    }[os];
+};
 
-    return path.join(getBinariesFolder(context), os === Os.Windows ? "dapviz.exe" : "dapviz");
+export const getExecutablePath = (context: vscode.ExtensionContext, os: Os) => {
+    return path.join(getBinariesFolder(context), getExecutableName(os));
 };
