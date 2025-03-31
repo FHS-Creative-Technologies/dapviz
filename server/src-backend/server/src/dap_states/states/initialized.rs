@@ -2,7 +2,7 @@ use dap_types::types::RequestArguments;
 use serde_json::{Map, Value};
 
 use crate::{
-    dap_client::Language,
+    dap_client::DebugAdapter,
     dap_states::{
         dap_state::{DapState, DapStateHandler},
         dap_state_machine::DapContext,
@@ -19,8 +19,8 @@ impl DapStateHandler for Initialized {
         &self,
         context: &DapContext,
     ) -> Option<Box<[dap_types::types::RequestArguments]>> {
-        let arguments = Map::from_iter(match context.language {
-            Language::CSharp => [
+        let arguments = Map::from_iter(match context.debug_adapter {
+            DebugAdapter::NetCoreDbg => [
                 // arguments taken from
                 // https://github.com/Samsung/netcoredbg/blob/83214c3993c052a0ccb8854b913e028c5e365bc6/src/protocols/vscodeprotocol.cpp#L585
                 ("cwd".to_owned(), "".into()),

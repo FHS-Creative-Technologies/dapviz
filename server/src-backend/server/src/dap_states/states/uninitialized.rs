@@ -1,7 +1,7 @@
 use dap_types::types::RequestArguments;
 
 use crate::{
-    dap_client::Language,
+    dap_client::DebugAdapter,
     dap_states::{
         dap_state::{DapState, DapStateHandler},
         dap_state_machine::DapContext,
@@ -20,8 +20,8 @@ impl DapStateHandler for Uninitialized {
     ) -> Option<Box<[dap_types::types::RequestArguments]>> {
         Some(Box::new([RequestArguments::initialize(
             dap_types::types::InitializeRequestArguments {
-                adapter_id: match context.language {
-                    Language::CSharp => "coreclr".into(),
+                adapter_id: match context.debug_adapter {
+                    DebugAdapter::NetCoreDbg => "coreclr".into(),
                 },
                 client_id: Some("dapviz".into()),
                 client_name: Some("dapviz".into()),

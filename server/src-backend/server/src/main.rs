@@ -1,10 +1,11 @@
 use std::path::Path;
 
+use anyhow::Context as _;
 use clap::Args;
 use clap::Parser as _;
 
 use dap_client::DapLaunchInfo;
-use dap_client::{DapClient, Language};
+use dap_client::{DapClient, DebugAdapter};
 use dap_states::dap_state_machine::ProgramState;
 use tracing_subscriber::EnvFilter;
 use user_request::UserRequest;
@@ -12,34 +13,49 @@ use webserver::Webserver;
 
 pub mod dap_client;
 pub mod dap_states;
-pub mod webserver;
 pub mod user_request;
+pub mod webserver;
 
 #[derive(Args)]
 pub struct LaunchInfo {
+    #[arg(
+        short,
+        long,
+        value_enum,
+        help = "which debug adapter is at the debugger_path"
+    )]
+    debug_adapter: DebugAdapter,
+
+    #[arg(help = "path to the dap server")]
+    debugger_path: String,
+
     #[arg(help = "the program to debug")]
     executable_path: String,
-
-    // NOTE: i assume we need to know which language we are debugging because different languages
-    // place different values in different memory locations
-    #[arg(short, long, value_enum, help = "which vendored dap server to start")]
-    language: Language,
 }
 
-impl From<LaunchInfo> for DapLaunchInfo {
-    fn from(value: LaunchInfo) -> Self {
-        // TODO: proper error handling
-        let full_path = Path::new(&value.executable_path)
-            .canonicalize()
-            .expect("executable path does not exist");
+impl TryFrom<LaunchInfo> for DapLaunchInfo {
+    type Error = anyhow::Error;
 
-        DapLaunchInfo {
-            executable_path: full_path
+    fn try_from(value: LaunchInfo) -> Result<Self, Self::Error> {
+        let full_executable_path = Path::new(&value.executable_path)
+            .canonicalize()
+            .context("executable path does not exist")?;
+
+        let full_debugger_path = Path::new(&value.debugger_path)
+            .canonicalize()
+            .context("debugger path does not exist")?;
+
+        Ok(DapLaunchInfo {
+            executable_path: full_executable_path
                 .to_str()
-                .expect("executable path should be valid utf-8")
+                .context("executable path should be valid utf-8")?
                 .into(),
-            language: value.language,
-        }
+            debugger_path: full_debugger_path
+                .to_str()
+                .context("debugger path should be valid utf-8")?
+                .into(),
+            debug_adapter: value.debug_adapter,
+        })
     }
 }
 
@@ -77,8 +93,10 @@ async fn main() -> anyhow::Result<()> {
     let webserver = Webserver::new(program_state_receiver, user_request_sender);
     let dap_client = DapClient::new(program_state_sender, user_request_receiver);
 
+    let launch_info = cli.launch_info.try_into()?;
+
     tokio::select! {
-        ok = dap_client.run(cli.launch_info) => ok,
+        ok = dap_client.run(launch_info) => ok,
 
         // this hosts the visualization and exposes the editor api
         ok = webserver.serve((cli.address, cli.port)) => ok,

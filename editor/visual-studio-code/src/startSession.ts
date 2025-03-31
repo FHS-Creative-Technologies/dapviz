@@ -47,12 +47,15 @@ export default async (context: vscode.ExtensionContext) => {
     const workspacePath = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
     const executablePath = `${workspacePath}/bin/Debug/net9.0/csharp.dll`;
 
+    // TODO: ensure this is installed
+    const debuggerPath = "/usr/local/netcoredbg";
+
     try {
         const terminal = vscode.window.createTerminal({
             name: "dapviz",
         });
 
-        terminal.sendText(`${dapvizPath} -p ${PORT} --language c-sharp ${executablePath}`);
+        terminal.sendText(`${dapvizPath} -p ${PORT} --debug-adapter netcoredbg "${debuggerPath}" "${executablePath}"`);
         terminal.show(true);
     } catch (e) {
         vscode.window.showErrorMessage("Could not start terminal command:", JSON.stringify(e));

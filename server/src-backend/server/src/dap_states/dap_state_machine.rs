@@ -4,7 +4,7 @@ use dap_types::types::{ProtocolMessage, ProtocolMessageType, RequestArguments};
 
 use serde::Serialize;
 
-use crate::{dap_client::Language, user_request::UserRequest};
+use crate::{dap_client::DebugAdapter, user_request::UserRequest};
 
 use super::{
     dap_state::{DapState, DapStateHandler},
@@ -144,7 +144,7 @@ pub struct ProgramState {
 
 #[derive(Debug)]
 pub struct DapContext {
-    pub language: Language,
+    pub debug_adapter: DebugAdapter,
     pub executable_path: String,
     pub program_state: Option<ProgramState>,
 }
@@ -157,11 +157,11 @@ pub struct DapStateMachine {
 }
 
 impl DapStateMachine {
-    pub fn new(language: Language, executable_path: String) -> Self {
+    pub fn new(debug_adapter: DebugAdapter, executable_path: String) -> Self {
         DapStateMachine {
             state: Uninitialized.into(),
             context: DapContext {
-                language,
+                debug_adapter,
                 executable_path,
                 program_state: None,
             },

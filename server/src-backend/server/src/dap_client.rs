@@ -17,13 +17,15 @@ use crate::{dap_states::dap_state_machine::{DapStateMachine, ProgramState}, user
 
 use clap::ValueEnum;
 #[derive(Serialize, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
-pub enum Language {
-    CSharp,
+pub enum DebugAdapter {
+    #[value(name="netcoredbg")]
+    NetCoreDbg,
 }
 
 pub struct DapLaunchInfo {
     pub executable_path: String,
-    pub language: Language,
+    pub debugger_path: String,
+    pub debug_adapter: DebugAdapter,
 }
 
 pub struct DapClient {
@@ -44,10 +46,9 @@ impl DapProcess {
     async fn start(launch_info: &DapLaunchInfo) -> anyhow::Result<Self> {
         const PORT: u16 = 4711;
 
-        let mut command = match launch_info.language {
-            Language::CSharp => {
-                // TODO: use vendored version in release build
-                let mut command = tokio::process::Command::new("/usr/local/netcoredbg");
+        let mut command = match launch_info.debug_adapter {
+            DebugAdapter::NetCoreDbg => {
+                let mut command = tokio::process::Command::new(&launch_info.debugger_path);
                 command.args(["--interpreter=vscode", &format!("--server={PORT}")]);
 
                 command
@@ -179,12 +180,11 @@ impl DapClient {
         }
     }
 
-    pub async fn run(mut self, launch_info: impl Into<DapLaunchInfo>) -> anyhow::Result<()> {
-        let launch_info: DapLaunchInfo = launch_info.into();
+    pub async fn run(mut self, launch_info: DapLaunchInfo) -> anyhow::Result<()> {
         let process = DapProcess::start(&launch_info).await?;
 
         let mut state_machine =
-            DapStateMachine::new(launch_info.language, launch_info.executable_path);
+            DapStateMachine::new(launch_info.debug_adapter, launch_info.executable_path);
 
         loop {
             while let Some(next) = state_machine.next_dap_requests() {

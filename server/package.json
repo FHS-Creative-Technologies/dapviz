@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently --kill-others npm:dev:*",
     "dev:js": "vite",
-    "dev:rust": "cd src-backend && cargo watch -- RUST_LOG=\"debug\" LOG_OUTPUT=\"stderr\" cargo run -- -p 8080 --language c-sharp ../../playground/csharp/bin/Debug/net9.0/csharp.dll",
+    "dev:rust": "cd src-backend && cargo watch -- RUST_LOG=\"debug\" LOG_OUTPUT=\"stderr\" cargo run -- --port 8080 --debug-adapter netcoredbg \"/usr/local/netcoredbg\" \"../../playground/csharp/bin/Debug/net9.0/csharp.dll\"",
     "build": "npm run build:js && npm run build:rust",
     "build:js": "tsc && vite build",
     "build:rust": "cd src-backend && cargo build --release",
