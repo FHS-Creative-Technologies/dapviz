@@ -1,7 +1,8 @@
 import { existsSync } from 'fs';
-import { platform } from 'os';
 import * as vscode from 'vscode';
 import { getExecutablePath, getOs } from './shared';
+import WebSocket from 'ws';
+import { promisify } from 'util';
 
 // TODO: make this configurable in extension settings
 const PORT = 5173;
@@ -31,6 +32,9 @@ const highlightLine = async (filePath: string, line: number) => {
         vscode.window.showErrorMessage(`Could not open file: ${filePath}`);
         return () => {};
     }
+
+    // vscode.Range is zero-based, lsp is one-based
+    line = line - 1;
 
     const range = new vscode.Range(line, 0, line, document.lineAt(line).text.length);
 
@@ -69,12 +73,23 @@ export default async (context: vscode.ExtensionContext) => {
             viewColumn: vscode.ViewColumn.Beside
         });
     
+    const api = `ws://localhost:${PORT}/api/events`;
+
+    await promisify(setTimeout)(1000);
+
+    const ws = new WebSocket(api);
+
     let clearPreviousHighlight: (() => void) | null = null;
-    const onWebviewMessage = async () => {
+
+    ws.on("error", (e) => {
+        vscode.window.showErrorMessage("Could not connect to dapviz:", JSON.stringify(e));
+    });
+
+    ws.on("message", async (data) => {
+        const json = JSON.parse(data.toString());
+        const currentStackFrame = json.threads[0].stack_frames[0];
+
         clearPreviousHighlight?.();
-
-        clearPreviousHighlight = await highlightLine("/Users/thekatze/Development/dapviz/playground/csharp/Program.cs", 11);
-    };
-
-    onWebviewMessage();
+        clearPreviousHighlight = await highlightLine(currentStackFrame.file, currentStackFrame.line);
+    });
 };

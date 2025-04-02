@@ -1,4 +1,3 @@
-import { promisify } from "util";
 import * as vscode from "vscode";
 import { getBinariesFolder, getExecutableName, getExecutablePath, getOs } from "./shared";
 import { chmod, mkdir, writeFile } from "fs/promises";
