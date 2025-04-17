@@ -1,24 +1,27 @@
 use std::{io::Read, net::Ipv4Addr, sync::atomic::AtomicUsize, time::Duration};
 
 use anyhow::Context;
-use backoff::{future::retry, ExponentialBackoffBuilder};
+use backoff::{ExponentialBackoffBuilder, future::retry};
 use bytes::{Bytes, BytesMut};
 use dap_types::types::{ProtocolMessage, RequestArguments};
 use serde::Serialize;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::{
-        tcp::{OwnedReadHalf, OwnedWriteHalf},
         TcpStream,
+        tcp::{OwnedReadHalf, OwnedWriteHalf},
     },
 };
 
-use crate::{dap_states::dap_state_machine::{DapStateMachine, ProgramState}, user_request::UserRequest};
+use crate::{
+    dap_states::dap_state_machine::{DapStateMachine, ProgramState},
+    user_request::UserRequest,
+};
 
 use clap::ValueEnum;
 #[derive(Serialize, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 pub enum DebugAdapter {
-    #[value(name="netcoredbg")]
+    #[value(name = "netcoredbg")]
     NetCoreDbg,
 }
 
@@ -186,14 +189,18 @@ impl DapClient {
         let mut state_machine =
             DapStateMachine::new(launch_info.debug_adapter, launch_info.executable_path);
 
-        loop {
+        while !state_machine.program_terminated() {
             while let Some(next) = state_machine.next_dap_requests() {
                 process.send(&next).await?;
                 state_machine = state_machine.process_dap_messages(&process.receive().await?);
             }
 
             if let Some(program_state) = state_machine.current_program_state() {
-                if self.program_state_sender.send(program_state.clone()).is_err() {
+                if self
+                    .program_state_sender
+                    .send(program_state.clone())
+                    .is_err()
+                {
                     break;
                 }
             }
@@ -214,6 +221,9 @@ impl DapClient {
                 }
             };
         }
+
+        // TODO: let the websocket listeners know
+        tracing::info!("Debuggee terminated, exiting.");
 
         Ok(())
     }

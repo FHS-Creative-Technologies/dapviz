@@ -38,12 +38,10 @@ impl VariableInfo {
                 parent: Some(parent),
                 ..data
             }),
-            VariableInfo::Unqueried(data) => VariableInfo::Unqueried(
-                VariableInfoData {
-                    parent: Some(parent),
-                    ..data
-                },
-            ),
+            VariableInfo::Unqueried(data) => VariableInfo::Unqueried(VariableInfoData {
+                parent: Some(parent),
+                ..data
+            }),
         }
     }
 
@@ -154,6 +152,7 @@ pub struct DapStateMachine {
     state: DapState,
     context: DapContext,
     might_have_new_requests: Cell<bool>,
+    program_terminated: bool,
 }
 
 impl DapStateMachine {
@@ -166,11 +165,16 @@ impl DapStateMachine {
                 program_state: None,
             },
             might_have_new_requests: true.into(),
+            program_terminated: false,
         }
     }
 
     pub fn current_program_state(&self) -> Option<&ProgramState> {
         self.context.program_state.as_ref()
+    }
+
+    pub fn program_terminated(&self) -> bool {
+        self.program_terminated
     }
 
     fn transition(&mut self, state: DapState) {
@@ -210,6 +214,11 @@ impl DapStateMachine {
                 }
                 ProtocolMessageType::Event(event_body) => {
                     tracing::debug!("Received event: {:?}", event_body);
+
+                    if matches!(event_body, dap_types::types::EventBody::terminated(_)) {
+                        self.program_terminated = true;
+                    }
+
                     self.state.handle_event(&mut self.context, event_body)
                 }
             };
