@@ -23,21 +23,54 @@ const BackgroundGrid = () => {
   );
 }
 
-const VariableViz = ({ variable }: { variable: Variable }) => {
+const VariableTree = ({ variable, allVariables }: { variable: Variable; allVariables: Variable[] }) => {
+  const children = allVariables.filter(v => v.parent === variable.reference);
+
+  if (variable.reference === 0 || children.length === 0) {
+    return (
+      <Container flexDirection="row" justifyContent="space-between" width="auto">
+        <Text fontSize={16} color="white">{variable.name}</Text>
+        <Text fontSize={16} color="white">{variable.value}</Text>
+      </Container>
+    );
+  }
+
   return (
-    <Container flexDirection="row" justifyContent="space-between" width="auto">
-      <Text fontSize={16} color="white">{variable.name}</Text>
-      <Text fontSize={16} color="white">{variable.value}</Text>
-    </Container>
+    <AccordionItem width="auto" value={variable.reference.toString()}>
+      <AccordionTrigger>
+        <Text fontSize={16} color="white">{variable.name}: {variable.value}</Text>
+      </AccordionTrigger>
+      <AccordionContent width="auto">
+        <Container flexDirection="column" width="auto" paddingLeft={10}>
+          {children.map((childVariable) => (
+            <VariableTree
+              key={childVariable.reference > 0 ? childVariable.reference : childVariable.name}
+              variable={childVariable}
+              allVariables={allVariables}
+            />
+          ))}
+        </Container>
+      </AccordionContent>
+    </AccordionItem>
   );
 }
 
 const StackFrameViz = ({ stackFrame }: { stackFrame: StackFrame }) => {
+
+  const allFrameVariables = stackFrame.scopes.flatMap((scope) => scope.variables);
+  const rootVariables = allFrameVariables.filter((variable) => variable.parent === null);
+
   return (
     <Container flexDirection="column-reverse" flexGrow={1}>
-      {stackFrame.scopes.flatMap((scope) => scope.variables).filter((variable) => variable.parent == null).map((variable, i) => (
-        <VariableViz key={i} variable={variable} />
-      ))}
+      <Accordion width="auto">
+        {rootVariables.map((variable) => (
+          <VariableTree
+            key={variable.reference > 0 ? variable.reference : variable.name}
+            variable={variable}
+            allVariables={allFrameVariables}
+          />
+        ))}
+      </Accordion>
     </Container>
   );
 }
@@ -47,19 +80,18 @@ const Stack = ({ thread }: { thread: ThreadInfo }) => {
     <Container flexDirection="column" width="auto">
       <Accordion width="auto">
         {thread.stack_frames.map((stackFrame, i) => (
-          <AccordionItem width="auto" value={stackFrame.function}>
-            <AccordionContent width="auto">
-              <StackFrameViz key={i} stackFrame={stackFrame} />
-            </AccordionContent>
+          <AccordionItem key={i} width="auto" value={stackFrame.function}>
             <AccordionTrigger>
               <Text fontSize={24} color="white">
                 {stackFrame.function}
               </Text>
             </AccordionTrigger>
+            <AccordionContent width="auto">
+              <StackFrameViz stackFrame={stackFrame} />
+            </AccordionContent>
           </AccordionItem>
         ))}
       </Accordion>
-      <Text fontSize={64} textAlign="center" fontWeight="bold" color="white">Stack</Text>
     </Container>
   );
 }
