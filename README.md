@@ -16,7 +16,8 @@ Alternatively, dapviz can be used as a standalone program. Download the latest v
 and run it from the command line:
 
 ```sh
-$ dapviz --debug-adapter netcoredbg <PATH-TO-DEBUGGER> <PATH-TO-PROGRAM>.dll
+$ dapviz install netcoredbg
+$ dapviz --debug-adapter netcoredbg <PATH-TO-PROGRAM>.dll
 ```
 
 ## Project Structure

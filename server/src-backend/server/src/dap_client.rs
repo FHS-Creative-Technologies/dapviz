@@ -4,7 +4,6 @@ use anyhow::Context;
 use backoff::{ExponentialBackoffBuilder, future::retry};
 use bytes::{Bytes, BytesMut};
 use dap_types::types::{ProtocolMessage, RequestArguments};
-use serde::Serialize;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::{
@@ -15,15 +14,9 @@ use tokio::{
 
 use crate::{
     dap_states::dap_state_machine::{DapStateMachine, ProgramState},
+    debug_adapters::DebugAdapter,
     user_request::UserRequest,
 };
-
-use clap::ValueEnum;
-#[derive(Serialize, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
-pub enum DebugAdapter {
-    #[value(name = "netcoredbg")]
-    NetCoreDbg,
-}
 
 pub struct DapLaunchInfo {
     pub executable_path: String,
