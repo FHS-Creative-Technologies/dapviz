@@ -1,12 +1,15 @@
 use std::path::Path;
+use std::path::PathBuf;
+use std::str::FromStr;
 
 use anyhow::Context as _;
 use clap::Args;
 use clap::Parser as _;
 use clap::Subcommand;
 
-use dap_client::DapLaunchInfo;
+use clap::ValueEnum;
 use dap_client::DapClient;
+use dap_client::DapLaunchInfo;
 use dap_states::dap_state_machine::ProgramState;
 use debug_adapters::DebugAdapter;
 use debug_adapters::DebugAdapterFunctions;
@@ -30,6 +33,12 @@ pub struct LaunchInfo {
     )]
     debug_adapter: DebugAdapter,
 
+    #[arg(
+        long,
+        help = "optional path to the dap server, will be automatically derived if debugger was installed through dapviz"
+    )]
+    debugger_path: Option<String>,
+
     #[arg(help = "the program to debug")]
     executable_path: String,
 
@@ -43,9 +52,6 @@ pub struct LaunchInfo {
 
     #[arg(short, long, default_value_t = 80, help = "port to listen on")]
     port: u16,
-
-    #[arg(help = "optional path to the dap server, will be automatically derived if debugger was installed through dapviz")]
-    debugger_path: Option<String>,
 }
 
 impl TryFrom<&LaunchInfo> for DapLaunchInfo {
@@ -56,16 +62,13 @@ impl TryFrom<&LaunchInfo> for DapLaunchInfo {
             .canonicalize()
             .context("executable path does not exist")?;
 
-        let full_debugger_path = Path::new(
-            value
-                .debugger_path
-                .as_ref()
-                .unwrap_or_else(|| 
-                    // TODO: try get path from value.debug_adapter
-                    todo!("try get path from value.debug_adapter")),
-        )
-        .canonicalize()
-        .context("debugger path does not exist")?;
+        let full_debugger_path = value
+            .debugger_path
+            .as_ref()
+            .map_or_else(|| value.debug_adapter.get_executable_path(), |path| PathBuf::from_str(path).ok())
+            .context("debug adapter not found. install the requested debug adapter with 'dapviz install <ADAPTER_NAME>' or pass '--debugger-path <PATH>'")?
+            .canonicalize()
+            .context("debugger path does not exist")?;
 
         Ok(DapLaunchInfo {
             executable_path: full_executable_path
@@ -84,9 +87,8 @@ impl TryFrom<&LaunchInfo> for DapLaunchInfo {
 #[derive(Subcommand)]
 enum Command {
     Launch(LaunchInfo),
-    Install{
-        debug_adapter: DebugAdapter
-    },
+    Install { debug_adapter: DebugAdapter },
+    ListDebugAdapters,
 }
 
 #[derive(clap::Parser)]
@@ -122,10 +124,24 @@ async fn main() -> anyhow::Result<()> {
                 // this hosts the visualization and exposes the editor api
                 ok = webserver.serve((launch_info.address, launch_info.port)) => ok,
             }
-        },
+        }
         Command::Install { debug_adapter } => {
-            debug_adapter.download().await.map(|_|())
-        },
+            let installation_path = debug_adapter.download().await?;
+
+            tracing::info!(
+                "Successfully installed {debug_adapter:?} at {}",
+                installation_path.display()
+            );
+
+            Ok(())
+        }
+        Command::ListDebugAdapters => {
+            for adapter in DebugAdapter::value_variants() {
+                let value = adapter.to_possible_value().unwrap();
+                println!("{}", value.get_name());
+            }
+
+            Ok(())
+        }
     }
 }
-

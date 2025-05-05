@@ -1,6 +1,7 @@
 use std::{io::Write as _, path::PathBuf, sync::LazyLock};
 
 use anyhow::Context as _;
+use async_trait::async_trait;
 use clap::ValueEnum;
 use serde::Serialize;
 
@@ -10,8 +11,9 @@ pub enum DebugAdapter {
     NetCoreDbg,
 }
 
+#[async_trait]
 pub(crate) trait DebugAdapterFunctions {
-    async fn download(&self) -> anyhow::Result<Box<dyn Future<Output = PathBuf>>>;
+    async fn download(&self) -> anyhow::Result<PathBuf>;
     fn get_executable_path(&self) -> Option<PathBuf>;
 }
 
@@ -52,8 +54,9 @@ struct GitHubReleaseResponse {
     assets: Vec<GitHubReleaseAsset>,
 }
 
+#[async_trait]
 impl DebugAdapterFunctions for DebugAdapterInstallDefinition {
-    async fn download(&self) -> anyhow::Result<Box<dyn Future<Output = PathBuf>>> {
+    async fn download(&'_ self) -> anyhow::Result<PathBuf> {
         match self.download {
             DownloadMethod::GitHubRelease {
                 repository_id,
@@ -85,13 +88,21 @@ impl DebugAdapterFunctions for DebugAdapterInstallDefinition {
                         format!("could not find {asset_name} in release {release_tag}")
                     })?;
 
-                let mut download_dir = DATA_BASE_DIR.to_owned();
-                download_dir.push(self.adapter_name);
+                let mut destination_file = DATA_BASE_DIR.to_owned();
+                destination_file.push(self.adapter_name);
+
+                let mut installation_dir = destination_file.clone();
+
+                if !std::fs::exists(&installation_dir)? {
+                    std::fs::create_dir(&installation_dir)?;
+                }
+
+                destination_file.push(&release_asset.name);
 
                 tracing::info!(
-                    "Downloading {} into {}",
+                    "Downloading {} to {}",
                     &release_asset.name,
-                    download_dir.display()
+                    destination_file.display()
                 );
 
                 let data = reqwest::Client::builder()
@@ -104,10 +115,39 @@ impl DebugAdapterFunctions for DebugAdapterInstallDefinition {
                     .bytes()
                     .await?;
 
-                let mut file = std::fs::File::create(&download_dir)?;
+                let mut file = std::fs::File::create(&destination_file)?;
                 file.write_all(&data)?;
 
-                Ok(Box::new(std::future::ready(download_dir)))
+                let installation_dir_arg = installation_dir.to_str().with_context(|| {
+                    format!(
+                        "installation directory is not valid utf-8: {}",
+                        installation_dir.display()
+                    )
+                })?;
+
+                let archive_arg = destination_file.to_str().with_context(|| {
+                    format!(
+                        "installation directory is not valid utf-8: {}",
+                        installation_dir.display()
+                    )
+                })?;
+
+                #[cfg(target_os = "windows")]
+                {
+                    let command = tokio::process::Command::new("Expand-Archive");
+                    compile_error!("TODO: windows build");
+                }
+                #[cfg(not(target_os = "windows"))]
+                {
+                    let mut command = tokio::process::Command::new("tar");
+                    command.args(["-x", "-f", archive_arg, "-C", installation_dir_arg]);
+
+                    command.spawn()?.wait().await?;
+                }
+
+                installation_dir.push(self.executable_name);
+
+                Ok(installation_dir)
             }
         }
     }
@@ -135,13 +175,17 @@ pub const NET_CORE_DBG_INSTALL: DebugAdapterInstallDefinition = DebugAdapterInst
         #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
         asset_name: "netcoredbg-osx-amd64.tar.gz",
         #[cfg(all(target_os = "windows", target_arch = "x86_64"))]
-        asset_name: "netcoredbg-osx-amd64.tar.gz",
+        asset_name: "netcoredbg-win64.zip",
     },
-    executable_name: "netcoredbg",
+    #[cfg(not(target_os = "windows"))]
+    executable_name: "netcoredbg/netcoredbg",
+    #[cfg(target_os = "windows")]
+    executable_name: "netcoredbg/netcoredbg.exe",
 };
 
+#[async_trait]
 impl DebugAdapterFunctions for DebugAdapter {
-    async fn download(&self) -> anyhow::Result<Box<dyn Future<Output = PathBuf>>> {
+    async fn download(&self) -> anyhow::Result<PathBuf> {
         match self {
             DebugAdapter::NetCoreDbg => NET_CORE_DBG_INSTALL.download().await,
         }
