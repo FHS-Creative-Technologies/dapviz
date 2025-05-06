@@ -22,6 +22,11 @@
         "command": "dapviz.downloadBinaries",
         "title": "Update backend",
         "category": "dapviz"
+      },
+      {
+        "command": "dapviz.installDebugAdapter",
+        "title": "Install a debug adapter",
+        "category": "dapviz"
       }
     ]
   },

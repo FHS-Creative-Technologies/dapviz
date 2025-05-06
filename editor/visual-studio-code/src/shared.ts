@@ -1,3 +1,4 @@
+import { existsSync } from "fs";
 import { platform } from "os";
 import path from "path";
 import * as vscode from "vscode";
@@ -36,7 +37,7 @@ export const getOs = () => {
 };
 
 export const getBinariesFolder = (context: vscode.ExtensionContext) => {
-   return context.asAbsolutePath("bin");
+    return context.asAbsolutePath("bin");
 };
 
 export const getExecutableName = (os: Os) => {
@@ -49,4 +50,16 @@ export const getExecutableName = (os: Os) => {
 
 export const getExecutablePath = (context: vscode.ExtensionContext, os: Os) => {
     return path.join(getBinariesFolder(context), getExecutableName(os));
+};
+
+export const ensureDapvizInstall = async (context: vscode.ExtensionContext): Promise<string> => {
+    const os = getOs();
+
+    const executablePath = getExecutablePath(context, os);
+
+    if (!existsSync(executablePath)) {
+        await vscode.commands.executeCommand("dapviz.downloadBinaries");
+    }
+
+    return executablePath;
 };

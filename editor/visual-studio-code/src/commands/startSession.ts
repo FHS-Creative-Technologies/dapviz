@@ -1,23 +1,11 @@
 import { existsSync } from 'fs';
 import * as vscode from 'vscode';
-import { getExecutablePath, getOs } from './shared';
+import { ensureDapvizInstall, getExecutablePath, getOs } from '../shared';
 import WebSocket from 'ws';
 import { promisify } from 'util';
 
 // TODO: make this configurable in extension settings
 const PORT = 5173;
-
-const ensureDapvizInstall = async (context: vscode.ExtensionContext): Promise<string> => {
-        const os = getOs();
-
-        const executablePath = getExecutablePath(context, os);
-
-        if (!existsSync(executablePath)) {
-            await vscode.commands.executeCommand("dapviz.downloadBinaries");
-        } 
-
-        return executablePath;
-};
 
 const highlightDecoration = vscode.window.createTextEditorDecorationType({
     backgroundColor: 'rgba(245, 201, 58, 0.4)',
@@ -30,7 +18,7 @@ const highlightLine = async (filePath: string, line: number) => {
 
     if (!editor) {
         vscode.window.showErrorMessage(`Could not open file: ${filePath}`);
-        return () => {};
+        return () => { };
     }
 
     // vscode.Range is zero-based, lsp is one-based
@@ -49,17 +37,19 @@ const highlightLine = async (filePath: string, line: number) => {
 export default async (context: vscode.ExtensionContext) => {
     const dapvizPath = await ensureDapvizInstall(context);
     const workspacePath = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
-    const executablePath = `${workspacePath}/bin/Debug/net9.0/csharp.dll`;
 
-    // TODO: ensure this is installed
-    const debuggerPath = "/usr/local/netcoredbg";
+    // TODO: let user choose
+    const executablePath = `${workspacePath}/bin/Debug/net9.0/csharp.dll`;
+    
+    // TODO: let user choose
+    const debugAdapter = "netcoredbg";
 
     try {
         const terminal = vscode.window.createTerminal({
             name: "dapviz",
         });
 
-        terminal.sendText(`${dapvizPath} -p ${PORT} --debug-adapter netcoredbg "${debuggerPath}" "${executablePath}"`);
+        terminal.sendText(`RUST_LOG="debug" LOG_OUTPUT="stderr" ${dapvizPath} launch -p ${PORT} --debug-adapter ${debugAdapter} "${executablePath}"`);
         terminal.show(true);
     } catch (e) {
         vscode.window.showErrorMessage("Could not start terminal command:", JSON.stringify(e));
@@ -72,7 +62,7 @@ export default async (context: vscode.ExtensionContext) => {
         {
             viewColumn: vscode.ViewColumn.Beside
         });
-    
+
     const api = `ws://localhost:${PORT}/api/events`;
 
     await promisify(setTimeout)(1000);
@@ -87,9 +77,12 @@ export default async (context: vscode.ExtensionContext) => {
 
     ws.on("message", async (data) => {
         const json = JSON.parse(data.toString());
-        const currentStackFrame = json.threads[0].stack_frames[0];
 
-        clearPreviousHighlight?.();
-        clearPreviousHighlight = await highlightLine(currentStackFrame.file, currentStackFrame.line);
+        const currentStackFrame = json.threads[0]?.stack_frames[0];
+
+        if (currentStackFrame) {
+            clearPreviousHighlight?.();
+            clearPreviousHighlight = await highlightLine(currentStackFrame.file, currentStackFrame.line);
+        }
     });
 };
