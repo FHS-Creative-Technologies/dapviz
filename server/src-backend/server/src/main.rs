@@ -29,7 +29,7 @@ pub struct LaunchInfo {
         short,
         long,
         value_enum,
-        help = "which debug adapter is at the debugger_path"
+        help = "which debug adapter to use, or if --debugger-path is provided which debugger is at debugger-path"
     )]
     debug_adapter: DebugAdapter,
 
