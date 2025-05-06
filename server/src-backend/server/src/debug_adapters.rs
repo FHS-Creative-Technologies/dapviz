@@ -132,17 +132,13 @@ impl DebugAdapterFunctions for DebugAdapterInstallDefinition {
                     )
                 })?;
 
-                #[cfg(target_os = "windows")]
-                {
-                    let command = tokio::process::Command::new("Expand-Archive");
-                    compile_error!("TODO: windows build");
-                }
-                #[cfg(not(target_os = "windows"))]
-                {
-                    let mut command = tokio::process::Command::new("tar");
-                    command.args(["-x", "-f", archive_arg, "-C", installation_dir_arg]);
+                // NOTE: surprisingly, tar also is on windows since win10. fancy
+                let mut command = tokio::process::Command::new("tar");
+                command.args(["-x", "-f", archive_arg, "-C", installation_dir_arg]);
 
-                    command.spawn()?.wait().await?;
+                let exit_code = command.spawn()?.wait().await?;
+                if !exit_code.success() {
+                    anyhow::bail!("unzipping downloaded archive was unsuccessful");
                 }
 
                 installation_dir.push(self.executable_name);
