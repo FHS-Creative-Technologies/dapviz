@@ -2,11 +2,11 @@ use dap_types::types::RequestArguments;
 use serde_json::{Map, Value};
 
 use crate::{
-    dap_client::DebugAdapter,
     dap_states::{
         dap_state::{DapState, DapStateHandler},
         dap_state_machine::DapContext,
     },
+    debug_adapters::DebugAdapter,
 };
 
 use super::configuration_done::ConfigurationDone;

@@ -19,8 +19,13 @@
         "category": "dapviz"
       },
       {
-        "command": "dapviz.downloadBinaries",
-        "title": "Update backend",
+        "command": "dapviz.downloadDapviz",
+        "title": "Install/Update dapviz backend",
+        "category": "dapviz"
+      },
+      {
+        "command": "dapviz.installDebugAdapter",
+        "title": "Install a debug adapter",
         "category": "dapviz"
       }
     ]

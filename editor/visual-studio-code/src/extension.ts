@@ -1,11 +1,13 @@
 import * as vscode from 'vscode';
 
-import startSession from './startSession';
-import downloadBinaries from './downloadBinaries';
+import startSession from './commands/startSession';
+import downloadDapviz from './commands/downloadDapviz';
+import installDebugAdapter from './commands/installDebugAdapter';
 
 const commands = {
-   "dapviz.startSession": startSession,
-   "dapviz.downloadBinaries": downloadBinaries,
+	"dapviz.startSession": startSession,
+	"dapviz.downloadDapviz": downloadDapviz,
+	"dapviz.installDebugAdapter": installDebugAdapter,
 } satisfies Record<string, (context: vscode.ExtensionContext, ...args: any) => unknown>;
 
 export function activate(context: vscode.ExtensionContext) {
@@ -15,4 +17,4 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(...disposables);
 }
 
-export function deactivate() {}
+export function deactivate() { }

@@ -1,12 +1,9 @@
 use dap_types::types::RequestArguments;
 
-use crate::{
-    dap_client::DebugAdapter,
-    dap_states::{
-        dap_state::{DapState, DapStateHandler},
-        dap_state_machine::DapContext,
-    },
-};
+use crate::{dap_states::{
+    dap_state::{DapState, DapStateHandler},
+    dap_state_machine::DapContext,
+}, debug_adapters::DebugAdapter};
 
 use super::initialized::Initialized;
 

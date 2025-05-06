@@ -4,7 +4,7 @@ use dap_types::types::{ProtocolMessage, ProtocolMessageType, RequestArguments};
 
 use serde::Serialize;
 
-use crate::{dap_client::DebugAdapter, user_request::UserRequest};
+use crate::{debug_adapters::DebugAdapter, user_request::UserRequest};
 
 use super::{
     dap_state::{DapState, DapStateHandler},
