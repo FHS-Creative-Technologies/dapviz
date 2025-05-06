@@ -1,12 +1,12 @@
 import * as vscode from 'vscode';
 
 import startSession from './commands/startSession';
-import downloadBinaries from './commands/downloadBinaries';
+import downloadDapviz from './commands/downloadDapviz';
 import installDebugAdapter from './commands/installDebugAdapter';
 
 const commands = {
 	"dapviz.startSession": startSession,
-	"dapviz.downloadBinaries": downloadBinaries,
+	"dapviz.downloadDapviz": downloadDapviz,
 	"dapviz.installDebugAdapter": installDebugAdapter,
 } satisfies Record<string, (context: vscode.ExtensionContext, ...args: any) => unknown>;
 

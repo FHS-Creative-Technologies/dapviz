@@ -21,7 +21,7 @@ export default async (context: vscode.ExtensionContext) => {
             },
         }).then((response) => response.json()) as any;
 
-        progress.report({message: `Downloading dapviz ${latest.tag_name}`});
+        progress.report({ message: `Downloading dapviz ${latest.tag_name}` });
 
         const binaryName = getExecutableName(os);
         const asset = latest.assets.find((asset: any) => asset.name === binaryName);

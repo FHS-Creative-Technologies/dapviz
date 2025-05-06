@@ -1,4 +1,3 @@
-import { existsSync } from 'fs';
 import * as vscode from 'vscode';
 import { ensureDapvizInstall, getExecutablePath, getOs } from '../shared';
 import WebSocket from 'ws';
@@ -40,7 +39,7 @@ export default async (context: vscode.ExtensionContext) => {
 
     // TODO: let user choose
     const executablePath = `${workspacePath}/bin/Debug/net9.0/csharp.dll`;
-    
+
     // TODO: let user choose
     const debugAdapter = "netcoredbg";
 
