@@ -13,6 +13,7 @@ use dap_client::DapLaunchInfo;
 use dap_states::dap_state_machine::ProgramState;
 use debug_adapters::DebugAdapter;
 use debug_adapters::DebugAdapterFunctions;
+use tracing::level_filters::LevelFilter;
 use tracing_subscriber::EnvFilter;
 use user_request::UserRequest;
 use webserver::Webserver;
@@ -100,7 +101,11 @@ struct Cli {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::from_default_env())
+        .with_env_filter(
+            EnvFilter::builder()
+                .with_default_directive(LevelFilter::INFO.into())
+                .from_env_lossy(),
+        )
         .init();
 
     let cli = Cli::parse();
