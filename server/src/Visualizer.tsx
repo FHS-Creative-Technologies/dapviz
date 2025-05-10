@@ -23,35 +23,12 @@ const BackgroundGrid = () => {
   );
 }
 
-const VariableTree = ({ variable, allVariables }: { variable: Variable; allVariables: Variable[] }) => {
-  const children = allVariables.filter(v => v.parent === variable.reference);
-
-  if (variable.reference === 0 || children.length === 0) {
-    return (
-      <Container flexDirection="row" justifyContent="space-between" width="auto">
-        <Text fontSize={16} color="white">{variable.name}</Text>
-        <Text fontSize={16} color="white">{variable.value}</Text>
-      </Container>
-    );
-  }
-
+const VariableViz = ({ variable }: { variable: Variable }) => {
   return (
-    <AccordionItem width="auto" value={variable.reference.toString()}>
-      <AccordionTrigger>
-        <Text fontSize={16} color="white">{variable.name}: {variable.value}</Text>
-      </AccordionTrigger>
-      <AccordionContent width="auto">
-        <Container flexDirection="column" width="auto" paddingLeft={10}>
-          {children.map((childVariable) => (
-            <VariableTree
-              key={childVariable.reference > 0 ? childVariable.reference : childVariable.name}
-              variable={childVariable}
-              allVariables={allVariables}
-            />
-          ))}
-        </Container>
-      </AccordionContent>
-    </AccordionItem>
+    <Container flexDirection="row" justifyContent="space-between" width="auto">
+      <Text fontSize={16} color="white">{variable.name}</Text>
+      <Text fontSize={16} color="white">{variable.value}</Text>
+    </Container>
   );
 }
 
@@ -64,10 +41,9 @@ const StackFrameViz = ({ stackFrame }: { stackFrame: StackFrame }) => {
     <Container flexDirection="column-reverse" flexGrow={1}>
       <Accordion width="auto">
         {rootVariables.map((variable) => (
-          <VariableTree
-            key={variable.reference > 0 ? variable.reference : variable.name}
+          <VariableViz
+            key={variable.name}
             variable={variable}
-            allVariables={allFrameVariables}
           />
         ))}
       </Accordion>
@@ -96,7 +72,72 @@ const Stack = ({ thread }: { thread: ThreadInfo }) => {
   );
 }
 
+const HeapNode = ({ variable, allVariables, initialPosition }: {
+  variable: Variable;
+  allVariables: Variable[];
+  initialPosition: [number, number, number],
+}) => {
+
+  const primitiveChildren = allVariables.filter(v => v.parent === variable.reference && v.reference === 0);
+  const referenceChildren = allVariables.filter(v => v.parent === variable.reference && v.reference > 0);
+
+  const xOffset = 150;
+  const yOffset = 100;
+
+  return (
+    <>
+      <DragControls>
+        <group position={initialPosition} >
+          <Root justifyContent="flex-start" flexDirection="column" pixelSize={0.5}>
+            <DefaultProperties fontWeight="medium" >
+              <Container
+                flexDirection="column"
+                backgroundColor={"#333"}
+                padding={20}
+              >
+                <Text fontSize={20} color="white">{variable.name} : [{variable.type}]</Text>
+
+                {primitiveChildren.map(child => (
+                  <VariableViz key={child.name} variable={child} />
+                ))}
+
+              </Container>
+            </DefaultProperties>
+          </Root>
+        </group>
+      </DragControls >
+
+      {referenceChildren.map((child, index) => {
+
+        const childPosition: [number, number, number] = [
+          initialPosition[0] + xOffset,
+          initialPosition[1] - (index * yOffset),
+          initialPosition[2]
+        ];
+
+        return (
+
+          <HeapNode
+            key={child.name}
+            variable={child}
+            allVariables={allVariables}
+            initialPosition={childPosition}
+          />
+
+        );
+      })
+      }
+    </>
+  );
+}
+
 const Visualizer = ({ thread }: { thread: ThreadInfo }) => {
+  const allVariables = thread.stack_frames.flatMap(frame =>
+    frame.scopes.flatMap(scope => scope.variables)
+  );
+
+  const heapVariables = allVariables.filter((variable) => variable.reference > 0 && variable.parent === null);
+
   return (
     <>
       <DebugJsonInfo thread={thread} />
@@ -107,6 +148,16 @@ const Visualizer = ({ thread }: { thread: ThreadInfo }) => {
           </DefaultProperties>
         </Root>
       </DragControls>
+
+      {heapVariables.map((variable, index) => (
+        <HeapNode
+          key={variable.name}
+          variable={variable}
+          allVariables={allVariables}
+          initialPosition={[300, index * -200, 0]}
+        />
+      ))}
+
       <BackgroundGrid />
       <MapControls maxZoom={2} minZoom={0.10} makeDefault />
     </>
