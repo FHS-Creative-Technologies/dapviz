@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
-import { ensureDapvizInstall, getExecutablePath, getOs } from '../shared';
+import { ensureDapvizInstall } from '../shared';
 import WebSocket from 'ws';
 import { promisify } from 'util';
+import { ExtensionState, getExtensionState, setExtensionState } from '../extension';
 
 // TODO: make this configurable in extension settings
 const PORT = 5173;
@@ -34,6 +35,11 @@ const highlightLine = async (filePath: string, line: number) => {
 };
 
 export default async (context: vscode.ExtensionContext) => {
+    if (getExtensionState().state === ExtensionState.Running) {
+        vscode.window.showErrorMessage("Can't start new session, already running");
+        return;
+    }
+
     const dapvizPath = await ensureDapvizInstall(context);
     const workspacePath = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
 
@@ -43,13 +49,16 @@ export default async (context: vscode.ExtensionContext) => {
     // TODO: let user choose
     const debugAdapter = "netcoredbg";
 
+    let terminal: vscode.Terminal | null;
+
     try {
-        const terminal = vscode.window.createTerminal({
+        terminal = vscode.window.createTerminal({
             name: "dapviz",
         });
 
         terminal.sendText(`RUST_LOG="debug" LOG_OUTPUT="stderr" ${dapvizPath} launch -p ${PORT} --debug-adapter ${debugAdapter} "${executablePath}"`);
         terminal.show(true);
+
     } catch (e) {
         vscode.window.showErrorMessage("Could not start terminal command:", JSON.stringify(e));
         return;
@@ -82,6 +91,13 @@ export default async (context: vscode.ExtensionContext) => {
         if (currentStackFrame) {
             clearPreviousHighlight?.();
             clearPreviousHighlight = await highlightLine(currentStackFrame.file, currentStackFrame.line);
+            setExtensionState({ state: ExtensionState.Running, terminal, ws, clearHighlight: clearPreviousHighlight });
         }
     });
+
+    ws.on("close", () => {
+        vscode.commands.executeCommand('dapviz.endSession');
+    });
+
+    setExtensionState({ state: ExtensionState.Running, terminal, ws, clearHighlight: () => { } });
 };

@@ -16,7 +16,14 @@
       {
         "command": "dapviz.startSession",
         "title": "Start session",
-        "category": "dapviz"
+        "category": "dapviz",
+        "when": "dapviz.state != 'running'"
+      },
+      {
+        "command": "dapviz.endSession",
+        "title": "End session",
+        "category": "dapviz",
+        "when": "dapviz.state == 'running'"
       },
       {
         "command": "dapviz.downloadDapviz",
@@ -28,7 +35,23 @@
         "title": "Install a debug adapter",
         "category": "dapviz"
       }
-    ]
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "dapviz.startSession",
+          "title": "Start session",
+          "category": "dapviz",
+          "when": "dapviz.state != 'running'"
+        },
+        {
+          "command": "dapviz.endSession",
+          "title": "End session",
+          "category": "dapviz",
+          "when": "dapviz.state == 'running'"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "pnpm run package",
