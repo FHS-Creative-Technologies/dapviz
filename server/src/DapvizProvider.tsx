@@ -78,10 +78,17 @@ const DapvizProvider = ({ children, noConnection }: { children: ReactNode, noCon
         return;
       }
 
-      setProgramState(json)
+      if (json?.threads?.length > 0) {
+        setProgramState(json)
+      } else {
+        setProgramState(null)
+      }
     })
 
-    ws.addEventListener("close", () => setRequestFunction(null));
+    ws.addEventListener("close", () => {
+      setRequestFunction(null);
+      setProgramState(null);
+    });
 
     return () => ws.close();
   }, [])
