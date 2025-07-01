@@ -5,11 +5,24 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "type": "lldb",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/server/src-backend",
+            "name": "Cargo launch",
+            "cargo": {
+                "cwd": "${workspaceFolder}/server/src-backend",
+                "args": [
+                    "build",
+                ]
+            },
+            "args": ["launch", "-d", "netcoredbg", "-a", "127.0.0.1", "-p", "8080", "../../playground/csharp/bin/Debug/net9.0/csharp.dll"]
+        },
+        {
             "type": "node-terminal",
             "name": "Run Script: dev",
             "request": "launch",
             "command": "pnpm run dev",
-            "cwd": "${workspaceFolder}\\server"
+            "cwd": "${workspaceFolder}/server"
         }
     ]
 }
