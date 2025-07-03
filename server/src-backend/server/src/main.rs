@@ -46,7 +46,7 @@ pub struct LaunchInfo {
     #[arg(
         short,
         long,
-        default_value = "0.0.0.0",
+        default_value = "127.0.0.1",
         help = "network address to listen on"
     )]
     address: String,
