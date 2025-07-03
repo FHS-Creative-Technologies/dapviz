@@ -66,6 +66,7 @@ impl Display for EventBody {
             EventBody::continued(..) => write!(f, "continued"),
             EventBody::exited(..) => write!(f, "exited"),
             EventBody::module(..) => write!(f, "module"),
+            EventBody::process(..) => write!(f, "process"),
             EventBody::terminated(..) => write!(f, "terminated"),
             EventBody::thread(..) => write!(f, "thread"),
             EventBody::invalidated(..) => write!(f, "invalidated"),
