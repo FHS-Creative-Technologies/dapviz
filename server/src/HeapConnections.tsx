@@ -1,6 +1,6 @@
 import { Variable } from "./DapvizProvider";
-import { QuadraticBezierLine } from "@react-three/drei";
-import React, { createContext, useMemo } from "react";
+import { QuadraticBezierLine, QuadraticBezierLineRef } from "@react-three/drei";
+import React, { createContext, useMemo, useRef } from "react";
 import { useCallback, useState } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
@@ -13,10 +13,83 @@ export type HeapConnectionContextType = {
 
 export const HeapConnectionContext = createContext<HeapConnectionContextType | null>(null);
 
+
+interface ConnectionLineProps {
+  parentRef: React.RefObject<THREE.Group>;
+  childRef: React.RefObject<THREE.Group>;
+}
+
+export const ConnectionLine = ({ parentRef, childRef }: ConnectionLineProps) => {
+
+  const lineRef = useRef<QuadraticBezierLineRef>(null);
+
+  const startCircleRef = useRef<THREE.Mesh>(null);
+  const endCircleRef = useRef<THREE.Mesh>(null);
+
+  const startPos = useMemo(() => new THREE.Vector3(), []);
+  const endPos = useMemo(() => new THREE.Vector3(), []);
+  const midPos = useMemo(() => new THREE.Vector3(), []);
+  const box = useMemo(() => new THREE.Box3(), []);
+  const size = useMemo(() => new THREE.Vector3(), []);
+
+  useFrame(() => {
+    if (parentRef.current && childRef.current && lineRef.current) {
+      parentRef.current.getWorldPosition(startPos);
+      childRef.current.getWorldPosition(endPos);
+
+      box.setFromObject(parentRef.current);
+      box.getSize(size);
+      const startOffset = size.x / 2;
+
+      box.setFromObject(childRef.current);
+      box.getSize(size);
+      const endOffset = size.x / 2;
+
+      const padding = 3;
+
+      const finalStart = startPos.clone();
+      finalStart.x += startOffset + padding;
+
+      const finalEnd = endPos.clone();
+      finalEnd.x -= endOffset + padding;
+
+
+      midPos.addVectors(finalStart, finalEnd).multiplyScalar(0.5);
+
+      midPos.y += 80;
+
+      lineRef.current.setPoints(finalStart, finalEnd, midPos);
+      startCircleRef.current?.position.copy(finalStart);
+      endCircleRef.current?.position.copy(finalEnd);
+    }
+  });
+
+  return (
+    <>
+      <QuadraticBezierLine
+        ref={lineRef}
+        start={[0, 0, 0]}
+        end={[0, 0, 0]}
+        color="white"
+        lineWidth={1}
+      />
+
+      <mesh ref={startCircleRef}>
+        <circleGeometry args={[2.5, 16]} />
+        <meshBasicMaterial color="red" />
+      </mesh>
+      <mesh ref={endCircleRef}>
+        <circleGeometry args={[2.5, 16]} />
+        <meshBasicMaterial color="red" />
+      </mesh>
+    </>
+
+  );
+}
+
 export const HeapConnectionsProvider = ({ children, allVariables }: { children: React.ReactNode, allVariables: Variable[] }) => {
 
   const [nodeRefs, setNodeRefs] = useState<Map<number, React.RefObject<THREE.Group>>>(new Map());
-  const [lines, setLines] = useState<{ start: THREE.Vector3; end: THREE.Vector3; key: string }[]>([]);
 
   const registerNode = useCallback((id: number, ref: React.RefObject<THREE.Group>) => {
     setNodeRefs(prev => new Map(prev).set(id, ref));
@@ -35,71 +108,27 @@ export const HeapConnectionsProvider = ({ children, allVariables }: { children: 
     [allVariables]
   );
 
-  const box = useMemo(() => new THREE.Box3(), []);
-  const size = useMemo(() => new THREE.Vector3(), []);
-  const startPos = useMemo(() => new THREE.Vector3(), []);
-  const endPos = useMemo(() => new THREE.Vector3(), []);
-
-  useFrame(() => {
-    const newLines = [];
-
-    for (const variable of connections) {
-
-      if (variable.parent && variable.parent > 0 && variable.reference > 0) {
-        const parentRef = nodeRefs.get(variable.parent);
-        const childRef = nodeRefs.get(variable.reference);
-
-        if (parentRef?.current && childRef?.current) {
-
-          parentRef.current.getWorldPosition(startPos);
-          childRef.current.getWorldPosition(endPos);
-
-          box.setFromObject(parentRef.current);
-          box.getSize(size);
-          const startOffset = size.x / 2;
-
-          box.setFromObject(childRef.current);
-          box.getSize(size);
-          const endOffset = size.x / 2;
-
-          const finalStart = startPos.clone();
-          const finalEnd = endPos.clone();
-
-          const padding = 3;
-
-          finalStart.x += startOffset + padding;
-          finalEnd.x -= endOffset + padding;
-
-          newLines.push({ start: finalStart, end: finalEnd, key: `${variable.parent}-${variable.reference}` });
-        }
-      }
-    }
-    setLines(newLines);
-  });
-
   return (
     <HeapConnectionContext.Provider value={{ registerNode, unregisterNode }}>
       {children}
 
       <group>
-        {lines.map(({ key, ...lineProps }) => (
-          <QuadraticBezierLine key={key} {...lineProps} color="white" lineWidth={1} />
-        ))}
+        {connections.map(variable => {
+          const parentRef = nodeRefs.get(variable.parent as number);
+          const childRef = nodeRefs.get(variable.reference);
 
-        {lines.map(line => (
-          <React.Fragment key={`${line.key}-circles`}>
-            <mesh position={line.start}>
-              <circleGeometry args={[2.5, 16]} />
-              <meshBasicMaterial color="red" />
-            </mesh>
-
-            <mesh position={line.end}>
-              <circleGeometry args={[2.5, 16]} />
-              <meshBasicMaterial color="red" />
-            </mesh>
-          </React.Fragment>
-        ))}
+          if (parentRef && childRef) {
+            return (
+              <ConnectionLine
+                key={`${variable.parent}-${variable.reference}`}
+                parentRef={parentRef}
+                childRef={childRef}
+              />
+            );
+          }
+          return null;
+        })}
       </group>
-    </HeapConnectionContext.Provider >
+    </HeapConnectionContext.Provider>
   );
 }
