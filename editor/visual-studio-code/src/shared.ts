@@ -44,7 +44,7 @@ export const getExecutableName = (os: Os) => {
     return {
         [Os.Windows]: "x86_64-pc-windows-msvc_dapviz.exe",
         [Os.MacOS]: "aarch64-apple-darwin_dapviz",
-        [Os.Linux]: "x86_64-unknown-linux-gnu_dapviz",
+        [Os.Linux]: "x86_64-unknown-linux-musl_dapviz",
     }[os];
 };
 
