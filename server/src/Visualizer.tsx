@@ -40,9 +40,9 @@ const StackFrameVariable = ({ variable }: { variable: Variable }) => {
 const PrimitiveVariable = ({ variable }: { variable: Variable }) => {
   return (
     <Container flexDirection="row" justifyContent="space-around" width="auto" renderOrder={1}>
-      <Text fontSize={16} color="orange">{variable.type}</Text>
-      <Text fontSize={16} color="white">{variable.name}</Text>
-      <Text fontSize={16} color="white">{variable.value}</Text>
+      <Text fontSize={16} color="#d65d0e">{variable.type}</Text>
+      <Text fontSize={16} color="#ebdbb2">{variable.name}</Text>
+      <Text fontSize={16} color="#ebdbb2">{variable.value}</Text>
     </Container>
   );
 }
@@ -142,19 +142,19 @@ const HeapNode = ({ variable, allVariables, initialPosition }: {
             <DefaultProperties fontWeight="medium" >
               <Container
                 flexDirection="column"
-                backgroundColor={"#2D2D3A"}
-                hover={{ backgroundColor: "#3C3C4A" }}
+                backgroundColor={"#282828"}
+                hover={{ backgroundColor: "#3c3836" }}
                 padding={15}
                 borderRadius={12}
                 borderWidth={1}
-                borderColor={"#4A4A5A"}
+                borderColor={"#504945"}
               >
 
                 <Container flexDirection="row" justifyContent="space-evenly" alignItems="center" paddingBottom={10}>
-                  <Text fontSize={22} color="white" fontWeight="bold" paddingRight={24} renderOrder={1}>
+                  <Text fontSize={22} color="#ebdbb2" fontWeight="bold" paddingRight={24} renderOrder={1}>
                     {variable.name}
                   </Text>
-                  <Text fontSize={16} color="#A0A0B0" fontWeight="thin" renderOrder={1}>
+                  <Text fontSize={16} color="#a89984" fontWeight="thin" renderOrder={1}>
                     {variable.type}
                   </Text>
                 </Container>

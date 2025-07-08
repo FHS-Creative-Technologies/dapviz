@@ -70,17 +70,17 @@ export const ConnectionLine = ({ parentRef, childRef }: ConnectionLineProps) => 
         ref={lineRef}
         start={[0, 0, 0]}
         end={[0, 0, 0]}
-        color="white"
+        color="#a89984"
         lineWidth={1}
       />
 
       <mesh ref={startCircleRef}>
         <circleGeometry args={[2.5, 16]} />
-        <meshBasicMaterial color="red" />
+        <meshBasicMaterial color="#689d6a" />
       </mesh>
       <mesh ref={endCircleRef}>
         <circleGeometry args={[2.5, 16]} />
-        <meshBasicMaterial color="red" />
+        <meshBasicMaterial color="#d79921" />
       </mesh>
     </>
 
