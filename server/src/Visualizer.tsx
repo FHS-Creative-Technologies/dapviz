@@ -39,7 +39,7 @@ const StackFrameVariable = ({ variable }: { variable: Variable }) => {
 
 const PrimitiveVariable = ({ variable }: { variable: Variable }) => {
   return (
-    <Container flexDirection="row" justifyContent="space-around" width="auto">
+    <Container flexDirection="row" justifyContent="space-around" width="auto" renderOrder={1}>
       <Text fontSize={16} color="orange">{variable.type}</Text>
       <Text fontSize={16} color="white">{variable.name}</Text>
       <Text fontSize={16} color="white">{variable.value}</Text>
@@ -151,10 +151,10 @@ const HeapNode = ({ variable, allVariables, initialPosition }: {
               >
 
                 <Container flexDirection="row" justifyContent="space-evenly" alignItems="center" paddingBottom={10}>
-                  <Text fontSize={22} color="white" fontWeight="bold" paddingRight={24}>
+                  <Text fontSize={22} color="white" fontWeight="bold" paddingRight={24} renderOrder={1}>
                     {variable.name}
                   </Text>
-                  <Text fontSize={16} color="#A0A0B0" fontWeight="thin">
+                  <Text fontSize={16} color="#A0A0B0" fontWeight="thin" renderOrder={1}>
                     {variable.type}
                   </Text>
                 </Container>
