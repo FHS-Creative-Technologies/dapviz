@@ -3,6 +3,10 @@ import { StackFrame, ThreadInfo, Variable } from "./DapvizProvider";
 import DebugJsonInfo from "./DebugJsonInfo";
 import { Container, DefaultProperties, Root, Text } from "@react-three/uikit";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./components/default/accordion";
+import { HeapConnectionContext, HeapConnectionsProvider } from "./HeapConnections";
+import * as THREE from "three";
+import { useContext, useEffect, useRef } from "react";
+
 
 const BackgroundGrid = () => {
   const size = 100;
@@ -78,16 +82,37 @@ const HeapNode = ({ variable, allVariables, initialPosition }: {
   initialPosition: [number, number, number],
 }) => {
 
+  const groupRef = useRef<THREE.Group>(null);
+  const context = useContext(HeapConnectionContext);
+
+  if (!context) {
+    throw new Error("HeapNode must be used within a HeapConnectionsProvider");
+  }
+
+  const { registerNode, unregisterNode } = context;
+
+  useEffect(() => {
+    if (variable.reference > 0 && groupRef.current) {
+      registerNode(variable.reference, groupRef as React.RefObject<THREE.Group>);
+    }
+
+    return () => {
+      if (variable.reference > 0) {
+        unregisterNode(variable.reference);
+      }
+    };
+  }, [variable.reference, registerNode, unregisterNode]);
+
   const primitiveChildren = allVariables.filter(v => v.parent === variable.reference && v.reference === 0);
   const referenceChildren = allVariables.filter(v => v.parent === variable.reference && v.reference > 0);
 
-  const xOffset = 150;
+  const xOffset = 250;
   const yOffset = 100;
 
   return (
     <>
       <DragControls>
-        <group position={initialPosition} >
+        <group ref={groupRef} position={initialPosition} >
           <Root justifyContent="flex-start" flexDirection="column" pixelSize={0.5}>
             <DefaultProperties fontWeight="medium" >
               <Container
@@ -149,14 +174,16 @@ const Visualizer = ({ thread }: { thread: ThreadInfo }) => {
         </Root>
       </DragControls>
 
-      {heapVariables.map((variable, index) => (
-        <HeapNode
-          key={variable.name}
-          variable={variable}
-          allVariables={allVariables}
-          initialPosition={[300, index * -200, 0]}
-        />
-      ))}
+      <HeapConnectionsProvider allVariables={allVariables}>
+        {heapVariables.map((variable, index) => (
+          <HeapNode
+            key={variable.name}
+            variable={variable}
+            allVariables={allVariables}
+            initialPosition={[300, index * -200, 0]}
+          />
+        ))}
+      </HeapConnectionsProvider>
 
       <BackgroundGrid />
       <MapControls maxZoom={2} minZoom={0.10} makeDefault />
