@@ -31,6 +31,9 @@ export const HeapConnectionsProvider = ({ children, allVariables }: { children: 
     });
   }, []);
 
+  const box = new THREE.Box3();
+  const size = new THREE.Vector3();
+
   useFrame(() => {
     const newLines = [];
 
@@ -47,11 +50,18 @@ export const HeapConnectionsProvider = ({ children, allVariables }: { children: 
           parentRef.current.getWorldPosition(startPos);
           childRef.current.getWorldPosition(endPos);
 
-          const startOffset = 45;
-          const endOffset = 50;
+          box.setFromObject(parentRef.current);
+          box.getSize(size);
+          const startOffset = size.x / 2;
 
-          startPos.x += startOffset;
-          endPos.x -= endOffset;
+          box.setFromObject(childRef.current);
+          box.getSize(size);
+          const endOffset = size.x / 2;
+
+          const padding = 3;
+
+          startPos.x += startOffset + padding;
+          endPos.x -= endOffset + padding;
 
           newLines.push({ start: startPos, end: endPos, key: `${variable.parent}-${variable.reference}` });
         }
