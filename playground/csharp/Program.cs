@@ -46,6 +46,37 @@ var vec = new Vector
     Z = 37,
 };
 
+var nested = new NestedClass
+{
+    mat = new Matrix()
+    {
+        Row0 = new Vector
+        {
+            X = 32,
+            Y = 64,
+            Z = 128,
+        },
+
+        Row1 = new Vector
+        {
+            X = 1,
+            Y = 2,
+            Z = 3,
+        },
+
+        Row2 = new Vector
+        {
+            X = 5,
+            Y = 6,
+            Z = 9,
+        },
+    },
+
+    name = "mat",
+    age = 28
+
+};
+
 var result = mat.Apply(vec);
 
 for (int i = 0; i < 10; ++i)
@@ -76,4 +107,12 @@ class Matrix
             Z = Row2.X * target.X + Row2.Y * target.Y + Row2.Z * target.Z
         };
     }
+}
+
+class NestedClass
+{
+    public required Matrix mat { get; init; }
+    public required string name { get; init; }
+    public required int age { get; init; }
+
 }
