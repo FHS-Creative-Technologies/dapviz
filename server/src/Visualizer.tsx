@@ -27,9 +27,20 @@ const BackgroundGrid = () => {
   );
 }
 
-const VariableViz = ({ variable }: { variable: Variable }) => {
+const StackFrameVariable = ({ variable }: { variable: Variable }) => {
   return (
     <Container flexDirection="row" justifyContent="space-between" width="auto">
+      <Text fontSize={16} color="white">{variable.name}</Text>
+      <Text fontSize={16} color="white">{variable.value}</Text>
+    </Container>
+  );
+}
+
+
+const PrimitiveVariable = ({ variable }: { variable: Variable }) => {
+  return (
+    <Container flexDirection="row" justifyContent="space-around" width="auto">
+      <Text fontSize={16} color="orange">{variable.type}</Text>
       <Text fontSize={16} color="white">{variable.name}</Text>
       <Text fontSize={16} color="white">{variable.value}</Text>
     </Container>
@@ -45,7 +56,7 @@ const StackFrameViz = ({ stackFrame }: { stackFrame: StackFrame }) => {
     <Container flexDirection="column-reverse" flexGrow={1}>
       <Accordion width="auto">
         {rootVariables.map((variable) => (
-          <VariableViz
+          <StackFrameVariable
             key={variable.name}
             variable={variable}
           />
@@ -117,14 +128,30 @@ const HeapNode = ({ variable, allVariables, initialPosition }: {
             <DefaultProperties fontWeight="medium" >
               <Container
                 flexDirection="column"
-                backgroundColor={"#333"}
-                padding={20}
+                backgroundColor={"#2D2D3A"}
+                hover={{ backgroundColor: "#3C3C4A" }}
+                padding={15}
+                borderRadius={12}
+                borderWidth={1}
+                borderColor={"#4A4A5A"}
               >
-                <Text fontSize={20} color="white">{variable.name} : [{variable.type}]</Text>
 
-                {primitiveChildren.map(child => (
-                  <VariableViz key={child.name} variable={child} />
-                ))}
+                <Container flexDirection="row" justifyContent="space-evenly" alignItems="center" paddingBottom={10}>
+                  <Text fontSize={22} color="white" fontWeight="bold" paddingRight={24}>
+                    {variable.name}
+                  </Text>
+                  <Text fontSize={16} color="#A0A0B0" fontStyle="italic">
+                    {variable.type}
+                  </Text>
+                </Container>
+
+                <Container height={1} backgroundColor="#4A4A5A" marginY={4} />
+
+                <Container flexDirection="column" marginTop={14} gap={8}>
+                  {primitiveChildren.map(child => (
+                    <PrimitiveVariable key={child.name} variable={child} />
+                  ))}
+                </Container>
 
               </Container>
             </DefaultProperties>
