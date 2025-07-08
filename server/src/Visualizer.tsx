@@ -5,7 +5,7 @@ import { Container, DefaultProperties, Root, Text } from "@react-three/uikit";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./components/default/accordion";
 import { HeapConnectionContext, HeapConnectionsProvider } from "./HeapConnections";
 import * as THREE from "three";
-import { useContext, useEffect, useRef } from "react";
+import { useContext, useEffect, useMemo, useRef } from "react";
 
 
 const BackgroundGrid = () => {
@@ -49,8 +49,10 @@ const PrimitiveVariable = ({ variable }: { variable: Variable }) => {
 
 const StackFrameViz = ({ stackFrame }: { stackFrame: StackFrame }) => {
 
-  const allFrameVariables = stackFrame.scopes.flatMap((scope) => scope.variables);
-  const rootVariables = allFrameVariables.filter((variable) => variable.parent === null);
+  const rootVariables = useMemo(() => {
+    const allFrameVariables = stackFrame.scopes.flatMap((scope) => scope.variables);
+    return allFrameVariables.filter((variable) => variable.parent === null);
+  }, [stackFrame.scopes]);
 
   return (
     <Container flexDirection="column-reverse" flexGrow={1}>
@@ -114,8 +116,20 @@ const HeapNode = ({ variable, allVariables, initialPosition }: {
     };
   }, [variable.reference, registerNode, unregisterNode]);
 
-  const primitiveChildren = allVariables.filter(v => v.parent === variable.reference && v.reference === 0);
-  const referenceChildren = allVariables.filter(v => v.parent === variable.reference && v.reference > 0);
+  const { primitiveChildren, referenceChildren } = useMemo(() => {
+    const pChildren: Variable[] = [];
+    const rChildren: Variable[] = [];
+    for (const v of allVariables) {
+      if (v.parent === variable.reference) {
+        if (v.reference === 0) {
+          pChildren.push(v);
+        } else if (v.reference > 0) {
+          rChildren.push(v);
+        }
+      }
+    }
+    return { primitiveChildren: pChildren, referenceChildren: rChildren };
+  }, [allVariables, variable.reference]);
 
   const xOffset = 250;
   const yOffset = 100;
@@ -140,7 +154,7 @@ const HeapNode = ({ variable, allVariables, initialPosition }: {
                   <Text fontSize={22} color="white" fontWeight="bold" paddingRight={24}>
                     {variable.name}
                   </Text>
-                  <Text fontSize={16} color="#A0A0B0" fontStyle="italic">
+                  <Text fontSize={16} color="#A0A0B0" fontWeight="thin">
                     {variable.type}
                   </Text>
                 </Container>
@@ -184,11 +198,15 @@ const HeapNode = ({ variable, allVariables, initialPosition }: {
 }
 
 const Visualizer = ({ thread }: { thread: ThreadInfo }) => {
-  const allVariables = thread.stack_frames.flatMap(frame =>
-    frame.scopes.flatMap(scope => scope.variables)
-  );
 
-  const heapVariables = allVariables.filter((variable) => variable.reference > 0 && variable.parent === null);
+  const allVariables = useMemo(() =>
+    thread.stack_frames.flatMap(frame =>
+      frame.scopes.flatMap(scope => scope.variables)
+    ), [thread.stack_frames]);
+
+  const heapVariables = useMemo(() =>
+    allVariables.filter((variable) => variable.reference > 0 && variable.parent === null),
+    [allVariables]);
 
   return (
     <>

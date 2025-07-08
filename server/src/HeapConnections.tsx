@@ -1,6 +1,6 @@
 import { Variable } from "./DapvizProvider";
 import { QuadraticBezierLine } from "@react-three/drei";
-import React, { createContext } from "react";
+import React, { createContext, useMemo } from "react";
 import { useCallback, useState } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
@@ -16,7 +16,6 @@ export const HeapConnectionContext = createContext<HeapConnectionContextType | n
 export const HeapConnectionsProvider = ({ children, allVariables }: { children: React.ReactNode, allVariables: Variable[] }) => {
 
   const [nodeRefs, setNodeRefs] = useState<Map<number, React.RefObject<THREE.Group>>>(new Map());
-
   const [lines, setLines] = useState<{ start: THREE.Vector3; end: THREE.Vector3; key: string }[]>([]);
 
   const registerNode = useCallback((id: number, ref: React.RefObject<THREE.Group>) => {
@@ -31,21 +30,26 @@ export const HeapConnectionsProvider = ({ children, allVariables }: { children: 
     });
   }, []);
 
-  const box = new THREE.Box3();
-  const size = new THREE.Vector3();
+  const connections = useMemo(() =>
+    allVariables.filter(v => v.parent && v.parent > 0 && v.reference > 0),
+    [allVariables]
+  );
+
+  const box = useMemo(() => new THREE.Box3(), []);
+  const size = useMemo(() => new THREE.Vector3(), []);
+  const startPos = useMemo(() => new THREE.Vector3(), []);
+  const endPos = useMemo(() => new THREE.Vector3(), []);
 
   useFrame(() => {
     const newLines = [];
 
-    for (const variable of allVariables) {
+    for (const variable of connections) {
 
       if (variable.parent && variable.parent > 0 && variable.reference > 0) {
         const parentRef = nodeRefs.get(variable.parent);
         const childRef = nodeRefs.get(variable.reference);
 
         if (parentRef?.current && childRef?.current) {
-          const startPos = new THREE.Vector3();
-          let endPos = new THREE.Vector3();
 
           parentRef.current.getWorldPosition(startPos);
           childRef.current.getWorldPosition(endPos);
@@ -58,12 +62,15 @@ export const HeapConnectionsProvider = ({ children, allVariables }: { children: 
           box.getSize(size);
           const endOffset = size.x / 2;
 
+          const finalStart = startPos.clone();
+          const finalEnd = endPos.clone();
+
           const padding = 3;
 
-          startPos.x += startOffset + padding;
-          endPos.x -= endOffset + padding;
+          finalStart.x += startOffset + padding;
+          finalEnd.x -= endOffset + padding;
 
-          newLines.push({ start: startPos, end: endPos, key: `${variable.parent}-${variable.reference}` });
+          newLines.push({ start: finalStart, end: finalEnd, key: `${variable.parent}-${variable.reference}` });
         }
       }
     }
