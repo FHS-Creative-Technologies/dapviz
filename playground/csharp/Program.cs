@@ -73,9 +73,9 @@ var nested = new NestedClass
     },
 
     name = "mat",
-    age = 28
-
+    age = 33
 };
+
 
 var result = mat.Apply(vec);
 
