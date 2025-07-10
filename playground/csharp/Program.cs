@@ -114,5 +114,5 @@ class NestedClass
     public required Matrix mat { get; init; }
     public required string name { get; init; }
     public required int age { get; init; }
-
 }
+
