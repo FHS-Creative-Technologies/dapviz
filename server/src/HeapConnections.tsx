@@ -26,11 +26,11 @@ export const ConnectionLine = ({ parentRef, childRef }: ConnectionLineProps) => 
   const startCircleRef = useRef<THREE.Mesh>(null);
   const endCircleRef = useRef<THREE.Mesh>(null);
 
-  const startPos = useMemo(() => new THREE.Vector3(), []);
-  const endPos = useMemo(() => new THREE.Vector3(), []);
-  const midPos = useMemo(() => new THREE.Vector3(), []);
-  const box = useMemo(() => new THREE.Box3(), []);
-  const size = useMemo(() => new THREE.Vector3(), []);
+  const startPos = new THREE.Vector3();
+  const endPos = new THREE.Vector3();
+  const midPos = new THREE.Vector3();
+  const box = new THREE.Box3();
+  const size = new THREE.Vector3();
 
   useFrame(() => {
     if (parentRef.current && childRef.current && lineRef.current) {
