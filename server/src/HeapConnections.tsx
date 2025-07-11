@@ -101,7 +101,7 @@ export const HeapConnectionsProvider = ({ children, allVariables }: { children: 
       newMap.delete(id);
       return newMap;
     });
-  }, []);
+  }, [setNodeRefs]);
 
   const connections = useMemo(() =>
     allVariables.filter(v => v.parent && v.parent > 0 && v.reference > 0),
