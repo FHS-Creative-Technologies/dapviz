@@ -19,7 +19,7 @@ interface ConnectionLineProps {
   childRef: React.RefObject<THREE.Group>;
 }
 
-export const ConnectionLine = ({ parentRef, childRef }: ConnectionLineProps) => {
+const ConnectionLine = ({ parentRef, childRef }: ConnectionLineProps) => {
 
   const lineRef = useRef<QuadraticBezierLineRef>(null);
 
