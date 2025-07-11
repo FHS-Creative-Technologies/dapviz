@@ -3,6 +3,10 @@ import { StackFrame, ThreadInfo, Variable } from "./DapvizProvider";
 import DebugJsonInfo from "./DebugJsonInfo";
 import { Container, DefaultProperties, Root, Text } from "@react-three/uikit";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./components/default/accordion";
+import { HeapConnectionContext, HeapConnectionsProvider } from "./HeapConnections";
+import * as THREE from "three";
+import { useContext, useEffect, useMemo, useRef } from "react";
+
 
 const BackgroundGrid = () => {
   const size = 100;
@@ -23,7 +27,7 @@ const BackgroundGrid = () => {
   );
 }
 
-const VariableViz = ({ variable }: { variable: Variable }) => {
+const StackFrameVariable = ({ variable }: { variable: Variable }) => {
   return (
     <Container flexDirection="row" justifyContent="space-between" width="auto">
       <Text fontSize={16} color="white">{variable.name}</Text>
@@ -32,16 +36,29 @@ const VariableViz = ({ variable }: { variable: Variable }) => {
   );
 }
 
+
+const PrimitiveVariable = ({ variable }: { variable: Variable }) => {
+  return (
+    <Container flexDirection="row" justifyContent="space-around" width="auto" renderOrder={1}>
+      <Text fontSize={16} color="#d65d0e">{variable.type}</Text>
+      <Text fontSize={16} color="#ebdbb2">{variable.name}</Text>
+      <Text fontSize={16} color="#ebdbb2">{variable.value}</Text>
+    </Container>
+  );
+}
+
 const StackFrameViz = ({ stackFrame }: { stackFrame: StackFrame }) => {
 
-  const allFrameVariables = stackFrame.scopes.flatMap((scope) => scope.variables);
-  const rootVariables = allFrameVariables.filter((variable) => variable.parent === null);
+  const rootVariables = useMemo(() => {
+    const allFrameVariables = stackFrame.scopes.flatMap((scope) => scope.variables);
+    return allFrameVariables.filter((variable) => variable.parent === null);
+  }, [stackFrame.scopes]);
 
   return (
     <Container flexDirection="column-reverse" flexGrow={1}>
       <Accordion width="auto">
         {rootVariables.map((variable) => (
-          <VariableViz
+          <StackFrameVariable
             key={variable.name}
             variable={variable}
           />
@@ -78,28 +95,77 @@ const HeapNode = ({ variable, allVariables, initialPosition }: {
   initialPosition: [number, number, number],
 }) => {
 
-  const primitiveChildren = allVariables.filter(v => v.parent === variable.reference && v.reference === 0);
-  const referenceChildren = allVariables.filter(v => v.parent === variable.reference && v.reference > 0);
+  const groupRef = useRef<THREE.Group>(null);
+  const context = useContext(HeapConnectionContext);
 
-  const xOffset = 150;
+  if (!context) {
+    throw new Error("HeapNode must be used within a HeapConnectionsProvider");
+  }
+
+  const { registerNode, unregisterNode } = context;
+
+  useEffect(() => {
+    if (variable.reference > 0 && groupRef.current) {
+      registerNode(variable.reference, groupRef as React.RefObject<THREE.Group>);
+    }
+
+    return () => {
+      if (variable.reference > 0) {
+        unregisterNode(variable.reference);
+      }
+    };
+  }, [variable.reference, registerNode, unregisterNode]);
+
+  const { primitiveChildren, referenceChildren } = useMemo(() => {
+    const pChildren: Variable[] = [];
+    const rChildren: Variable[] = [];
+    for (const v of allVariables) {
+      if (v.parent === variable.reference) {
+        if (v.reference === 0) {
+          pChildren.push(v);
+        } else if (v.reference > 0) {
+          rChildren.push(v);
+        }
+      }
+    }
+    return { primitiveChildren: pChildren, referenceChildren: rChildren };
+  }, [allVariables, variable.reference]);
+
+  const xOffset = 250;
   const yOffset = 100;
 
   return (
     <>
       <DragControls>
-        <group position={initialPosition} >
+        <group ref={groupRef} position={initialPosition} >
           <Root justifyContent="flex-start" flexDirection="column" pixelSize={0.5}>
             <DefaultProperties fontWeight="medium" >
               <Container
                 flexDirection="column"
-                backgroundColor={"#333"}
-                padding={20}
+                backgroundColor={"#282828"}
+                hover={{ backgroundColor: "#3c3836" }}
+                padding={15}
+                borderRadius={12}
+                borderWidth={1}
+                borderColor={"#504945"}
               >
-                <Text fontSize={20} color="white">{variable.name} : [{variable.type}]</Text>
 
-                {primitiveChildren.map(child => (
-                  <VariableViz key={child.name} variable={child} />
-                ))}
+                <Container flexDirection="row" justifyContent="space-evenly" alignItems="center" paddingBottom={10}>
+                  <Text fontSize={22} color="#ebdbb2" fontWeight="bold" paddingRight={24} renderOrder={1}>
+                    {variable.name}
+                  </Text>
+                  <Text fontSize={16} color="#a89984" fontWeight="thin" renderOrder={1}>
+                    {variable.type}
+                  </Text>
+                </Container>
+
+                <Container height={1} backgroundColor="#4A4A5A" marginY={4} />
+
+                <Container flexDirection="column" marginTop={14} gap={8}>
+                  {primitiveChildren.map(child => (
+                    <PrimitiveVariable key={child.name} variable={child} />
+                  ))}
+                </Container>
 
               </Container>
             </DefaultProperties>
@@ -132,11 +198,15 @@ const HeapNode = ({ variable, allVariables, initialPosition }: {
 }
 
 const Visualizer = ({ thread }: { thread: ThreadInfo }) => {
-  const allVariables = thread.stack_frames.flatMap(frame =>
-    frame.scopes.flatMap(scope => scope.variables)
-  );
 
-  const heapVariables = allVariables.filter((variable) => variable.reference > 0 && variable.parent === null);
+  const allVariables = useMemo(() =>
+    thread.stack_frames.flatMap(frame =>
+      frame.scopes.flatMap(scope => scope.variables)
+    ), [thread.stack_frames]);
+
+  const heapVariables = useMemo(() =>
+    allVariables.filter((variable) => variable.reference > 0 && variable.parent === null),
+    [allVariables]);
 
   return (
     <>
@@ -149,14 +219,16 @@ const Visualizer = ({ thread }: { thread: ThreadInfo }) => {
         </Root>
       </DragControls>
 
-      {heapVariables.map((variable, index) => (
-        <HeapNode
-          key={variable.name}
-          variable={variable}
-          allVariables={allVariables}
-          initialPosition={[300, index * -200, 0]}
-        />
-      ))}
+      <HeapConnectionsProvider allVariables={allVariables}>
+        {heapVariables.map((variable, index) => (
+          <HeapNode
+            key={variable.name}
+            variable={variable}
+            allVariables={allVariables}
+            initialPosition={[300, index * -200, 0]}
+          />
+        ))}
+      </HeapConnectionsProvider>
 
       <BackgroundGrid />
       <MapControls maxZoom={2} minZoom={0.10} makeDefault />
