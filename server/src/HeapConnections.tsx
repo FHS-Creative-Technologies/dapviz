@@ -93,7 +93,7 @@ export const HeapConnectionsProvider = ({ children, allVariables }: { children: 
 
   const registerNode = useCallback((id: number, ref: React.RefObject<THREE.Group>) => {
     setNodeRefs(prev => new Map(prev).set(id, ref));
-  }, []);
+  }, [setNodeRefs]);
 
   const unregisterNode = useCallback((id: number) => {
     setNodeRefs(prev => {
