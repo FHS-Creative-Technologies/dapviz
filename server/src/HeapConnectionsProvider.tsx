@@ -35,41 +35,39 @@ const ConnectionLine = ({ parentRef, childRef }: ConnectionLineProps) => {
   const endCircleRef = useRef<THREE.Mesh>(null);
 
   useFrame(() => {
-    if (parentRef.current && childRef.current && lineRef.current) {
-      const startPos = new THREE.Vector3();
-      const endPos = new THREE.Vector3();
-      const midPos = new THREE.Vector3();
-      const box = new THREE.Box3();
-      const size = new THREE.Vector3();
+    if (!parentRef.current || !childRef.current || !lineRef.current) return;
 
-      parentRef.current.getWorldPosition(startPos);
-      childRef.current.getWorldPosition(endPos);
+    const startPos = new THREE.Vector3();
+    const endPos = new THREE.Vector3();
+    const midPos = new THREE.Vector3();
+    const box = new THREE.Box3();
+    const size = new THREE.Vector3();
 
-      box.setFromObject(parentRef.current);
-      box.getSize(size);
-      const startOffset = size.x / 2;
+    parentRef.current.getWorldPosition(startPos);
+    childRef.current.getWorldPosition(endPos);
 
-      box.setFromObject(childRef.current);
-      box.getSize(size);
-      const endOffset = size.x / 2;
+    box.setFromObject(parentRef.current);
+    box.getSize(size);
+    const startOffset = size.x / 2;
 
-      const padding = 3;
+    box.setFromObject(childRef.current);
+    box.getSize(size);
+    const endOffset = size.x / 2;
 
-      const finalStart = startPos.clone();
-      finalStart.x += startOffset + padding;
+    const padding = 3;
 
-      const finalEnd = endPos.clone();
-      finalEnd.x -= endOffset + padding;
+    const finalStart = startPos.clone();
+    finalStart.x += startOffset + padding;
 
+    const finalEnd = endPos.clone();
+    finalEnd.x -= endOffset + padding;
 
-      midPos.addVectors(finalStart, finalEnd).multiplyScalar(0.5);
+    midPos.addVectors(finalStart, finalEnd).multiplyScalar(0.5);
+    midPos.y += 80;
 
-      midPos.y += 80;
-
-      lineRef.current.setPoints(finalStart, finalEnd, midPos);
-      startCircleRef.current?.position.copy(finalStart);
-      endCircleRef.current?.position.copy(finalEnd);
-    }
+    lineRef.current.setPoints(finalStart, finalEnd, midPos);
+    startCircleRef.current?.position.copy(finalStart);
+    endCircleRef.current?.position.copy(finalEnd);
   });
 
   return (
