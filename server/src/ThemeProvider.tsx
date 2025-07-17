@@ -25,8 +25,8 @@ interface AppTheme {
 
 export const gruvboxTheme: AppTheme = {
   grid: {
-    cell: "#444",
-    section: "#444",
+    cell: "#3c3836",
+    section: "#504945",
   },
   text: {
     primary: "#ebdbb2",
@@ -35,7 +35,7 @@ export const gruvboxTheme: AppTheme = {
   },
   node: {
     background: "#282828",
-    backgroundHover: "#3c3836",
+    backgroundHover: "#504945",
     border: "#504945",
     divider: "#4a4a5a",
   },
