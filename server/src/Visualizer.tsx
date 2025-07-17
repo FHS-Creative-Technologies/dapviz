@@ -3,7 +3,7 @@ import { StackFrame, ThreadInfo, Variable } from "./DapvizProvider";
 import DebugJsonInfo from "./DebugJsonInfo";
 import { Container, DefaultProperties, Root, Text } from "@react-three/uikit";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./components/default/accordion";
-import { HeapConnectionContext, HeapConnectionsProvider } from "./HeapConnections";
+import { HeapConnectionContext, HeapConnectionsProvider } from "./HeapConnectionsProvider";
 import * as THREE from "three";
 import { useContext, useEffect, useMemo, useRef } from "react";
 
