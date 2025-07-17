@@ -91,9 +91,9 @@ const Stack = ({ thread }: { thread: ThreadInfo }) => {
   );
 }
 
-const HeapNode = ({ variable, allVariables, initialPosition }: {
+const HeapNode = ({ variable, childrenMap, initialPosition }: {
   variable: Variable;
-  allVariables: Variable[];
+  childrenMap: Map<number | null, Variable[]>;
   initialPosition: [number, number, number],
 }) => {
   const theme = useTheme();
@@ -115,20 +115,22 @@ const HeapNode = ({ variable, allVariables, initialPosition }: {
   }, [variable.reference, registerNode, unregisterNode]);
 
   const { primitiveChildren, referenceChildren } = useMemo(() => {
+    const children = childrenMap.get(variable.reference) ?? [];
+
     const primitiveChildren: Variable[] = [];
     const referenceChildren: Variable[] = [];
 
-    for (const v of allVariables) {
-      if (v.parent === variable.reference) {
-        if (v.reference === 0) {
-          primitiveChildren.push(v);
-        } else {
-          referenceChildren.push(v);
-        }
+    for (const child of children) {
+      if (child.reference === 0) {
+        primitiveChildren.push(child);
+      } else {
+        referenceChildren.push(child);
       }
     }
+
     return { primitiveChildren, referenceChildren };
-  }, [allVariables, variable.reference]);
+
+  }, [childrenMap, variable.reference]);
 
   const xOffset = 250;
   const yOffset = 100;
@@ -184,7 +186,7 @@ const HeapNode = ({ variable, allVariables, initialPosition }: {
           <HeapNode
             key={child.name}
             variable={child}
-            allVariables={allVariables}
+            childrenMap={childrenMap}
             initialPosition={childPosition}
           />
         );
@@ -200,9 +202,24 @@ const Visualizer = ({ thread }: { thread: ThreadInfo }) => {
       frame.scopes.flatMap(scope => scope.variables)
     ), [thread.stack_frames]);
 
-  const heapVariables = useMemo(() =>
-    allVariables.filter((variable) => variable.reference > 0 && variable.parent === null),
-    [allVariables]);
+  const { rootHeapVariables, childrenMap } = useMemo(() => {
+    const childrenMap = new Map<number | null, Variable[]>;
+
+    for (const variable of allVariables) {
+      if (variable.reference > 0 && !childrenMap.has(variable.reference)) {
+        childrenMap.set(variable.reference, []);
+      }
+
+      const children = childrenMap.get(variable.parent) ?? [];
+      children.push(variable);
+      childrenMap.set(variable.parent, children);
+    }
+
+    const rootVariables = childrenMap.get(null) ?? [];
+    const rootHeapVariables = rootVariables.filter(v => v.reference > 0);
+
+    return { rootHeapVariables, childrenMap };
+  }, [allVariables]);
 
   return (
     <>
@@ -216,11 +233,11 @@ const Visualizer = ({ thread }: { thread: ThreadInfo }) => {
       </DragControls>
 
       <HeapConnectionsProvider allVariables={allVariables}>
-        {heapVariables.map((variable, index) => (
+        {rootHeapVariables.map((variable, index) => (
           <HeapNode
             key={variable.name}
             variable={variable}
-            allVariables={allVariables}
+            childrenMap={childrenMap}
             initialPosition={[300, index * -200, 0]}
           />
         ))}
