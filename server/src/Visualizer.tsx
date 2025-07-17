@@ -115,18 +115,19 @@ const HeapNode = ({ variable, allVariables, initialPosition }: {
   }, [variable.reference, registerNode, unregisterNode]);
 
   const { primitiveChildren, referenceChildren } = useMemo(() => {
-    const pChildren: Variable[] = [];
-    const rChildren: Variable[] = [];
+    const primitiveChildren: Variable[] = [];
+    const referenceChildren: Variable[] = [];
+
     for (const v of allVariables) {
       if (v.parent === variable.reference) {
         if (v.reference === 0) {
-          pChildren.push(v);
-        } else if (v.reference > 0) {
-          rChildren.push(v);
+          primitiveChildren.push(v);
+        } else {
+          referenceChildren.push(v);
         }
       }
     }
-    return { primitiveChildren: pChildren, referenceChildren: rChildren };
+    return { primitiveChildren, referenceChildren };
   }, [allVariables, variable.reference]);
 
   const xOffset = 250;
