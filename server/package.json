@@ -11,8 +11,11 @@
     "build:js": "tsc && vite build",
     "build:rust": "cd src-backend && cargo build --release",
     "lint": "npm run lint:js && npm run lint:rust",
-    "lint:js": "eslint src/",
-    "lint:rust": "cd src-backend && cargo check"
+    "lint:js": "eslint src/ && prettier . --check",
+    "lint:rust": "cd src-backend && cargo check",
+    "lint:fix": "npm run lint:fix:rust && npm run lint:fix:js",
+    "lint:fix:js": "eslint src/ --fix && prettier . --write",
+    "lint:fix:rust": "cd src-backend && cargo fix"
   },
   "dependencies": {
     "@react-three/drei": "^10.4.2",
@@ -32,9 +35,11 @@
     "concurrently": "^9.2.0",
     "cross-env": "^7.0.3",
     "eslint": "^9.30.0",
+    "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
+    "prettier": "^3.6.2",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.35.1",
     "vite": "^6.3.5",
