@@ -7,7 +7,7 @@ import { useFrame } from "@react-three/fiber";
 import { useTheme } from "./ThemeProvider";
 
 export type HeapConnectionContextType = {
-  registerNode: (id: number, ref: React.RefObject<THREE.Group>) => void;
+  registerNode: (id: number, ref: React.RefObject<THREE.Group | null>) => void;
   unregisterNode: (id: number) => void;
 };
 
@@ -22,8 +22,8 @@ export const useHeapConnections = () => {
 }
 
 interface ConnectionLineProps {
-  parentRef: React.RefObject<THREE.Group>;
-  childRef: React.RefObject<THREE.Group>;
+  parentRef: React.RefObject<THREE.Group | null>;
+  childRef: React.RefObject<THREE.Group | null>;
 }
 
 const ConnectionLine = ({ parentRef, childRef }: ConnectionLineProps) => {
@@ -99,9 +99,9 @@ function hasParent(v: Variable): v is VariableWithParent {
 }
 
 export const HeapConnectionsProvider = ({ children, allVariables }: { children: React.ReactNode, allVariables: Variable[] }) => {
-  const [nodeRefs, setNodeRefs] = useState<Map<number, React.RefObject<THREE.Group>>>(new Map());
+  const [nodeRefs, setNodeRefs] = useState<Map<number, React.RefObject<THREE.Group | null>>>(new Map());
 
-  const registerNode = useCallback((id: number, ref: React.RefObject<THREE.Group>) => {
+  const registerNode = useCallback((id: number, ref: React.RefObject<THREE.Group | null>) => {
     setNodeRefs(prev => new Map(prev).set(id, ref));
   }, [setNodeRefs]);
 

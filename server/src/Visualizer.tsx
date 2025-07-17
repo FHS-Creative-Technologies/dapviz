@@ -104,7 +104,7 @@ const HeapNode = ({ variable, allVariables, initialPosition }: {
 
   useEffect(() => {
     if (variable.reference > 0 && groupRef.current) {
-      registerNode(variable.reference, groupRef as React.RefObject<THREE.Group>);
+      registerNode(variable.reference, groupRef);
     }
 
     return () => {
