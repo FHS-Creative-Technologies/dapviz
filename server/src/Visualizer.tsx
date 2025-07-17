@@ -205,10 +205,6 @@ const Visualizer = ({ thread }: { thread: ThreadInfo }) => {
     const childrenMap = new Map<number | null, Variable[]>;
 
     for (const variable of allVariables) {
-      if (variable.reference > 0 && !childrenMap.has(variable.reference)) {
-        childrenMap.set(variable.reference, []);
-      }
-
       const children = childrenMap.get(variable.parent) ?? [];
       children.push(variable);
       childrenMap.set(variable.parent, children);
