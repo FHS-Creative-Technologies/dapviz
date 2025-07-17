@@ -56,8 +56,8 @@ export const useTheme = () => {
   return context;
 }
 
-export const ThemeProvider = ({ children, theme }: { children: ReactNode; theme: AppTheme }) => {
-  return <ThemeContext.Provider value={theme}>
+export const ThemeProvider = ({ children }: { children: ReactNode }) => {
+  return <ThemeContext.Provider value={gruvboxTheme}>
     {children}
   </ThemeContext.Provider>;
 };
