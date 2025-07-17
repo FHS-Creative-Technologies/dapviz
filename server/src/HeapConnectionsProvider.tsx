@@ -92,6 +92,12 @@ const ConnectionLine = ({ parentRef, childRef }: ConnectionLineProps) => {
   );
 }
 
+type VariableWithParent = Variable & { parent: NonNullable<Variable["parent"]> };
+
+function hasParent(v: Variable): v is VariableWithParent {
+  return !!v.parent && v.reference > 0;
+}
+
 export const HeapConnectionsProvider = ({ children, allVariables }: { children: React.ReactNode, allVariables: Variable[] }) => {
   const [nodeRefs, setNodeRefs] = useState<Map<number, React.RefObject<THREE.Group>>>(new Map());
 
@@ -108,8 +114,7 @@ export const HeapConnectionsProvider = ({ children, allVariables }: { children: 
   }, [setNodeRefs]);
 
   const connections = useMemo(() =>
-    allVariables.filter(v => v.parent && v.parent > 0 && v.reference > 0),
-    [allVariables]
+    allVariables.filter(hasParent), [allVariables]
   );
 
   return (
@@ -118,7 +123,7 @@ export const HeapConnectionsProvider = ({ children, allVariables }: { children: 
 
       <group>
         {connections.map(variable => {
-          const parentRef = nodeRefs.get(variable.parent as number);
+          const parentRef = nodeRefs.get(variable.parent);
           const childRef = nodeRefs.get(variable.reference);
 
           if (!parentRef || !childRef) return null;
