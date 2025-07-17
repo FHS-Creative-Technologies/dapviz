@@ -98,9 +98,8 @@ const HeapNode = ({ variable, childrenMap, initialPosition }: {
 }) => {
   const theme = useTheme();
   const groupRef = useRef<THREE.Group>(null);
-  const heapConnections = useHeapConnections();
 
-  const { registerNode, unregisterNode } = heapConnections;
+  const { registerNode, unregisterNode } = useHeapConnections();
 
   useEffect(() => {
     if (variable.reference > 0 && groupRef.current) {
