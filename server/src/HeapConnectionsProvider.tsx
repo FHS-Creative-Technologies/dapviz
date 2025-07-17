@@ -34,14 +34,14 @@ const ConnectionLine = ({ parentRef, childRef }: ConnectionLineProps) => {
   const startCircleRef = useRef<THREE.Mesh>(null);
   const endCircleRef = useRef<THREE.Mesh>(null);
 
-  const startPos = new THREE.Vector3();
-  const endPos = new THREE.Vector3();
-  const midPos = new THREE.Vector3();
-  const box = new THREE.Box3();
-  const size = new THREE.Vector3();
-
   useFrame(() => {
     if (parentRef.current && childRef.current && lineRef.current) {
+      const startPos = new THREE.Vector3();
+      const endPos = new THREE.Vector3();
+      const midPos = new THREE.Vector3();
+      const box = new THREE.Box3();
+      const size = new THREE.Vector3();
+
       parentRef.current.getWorldPosition(startPos);
       childRef.current.getWorldPosition(endPos);
 
