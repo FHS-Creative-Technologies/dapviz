@@ -1,26 +1,26 @@
-import { createContext, ReactNode, useContext } from "react"
+import { createContext, ReactNode, useContext } from "react";
 
 interface AppTheme {
   grid: {
-    cell: string,
-    section: string,
-  },
+    cell: string;
+    section: string;
+  };
   text: {
-    primary: string,
-    secondary: string,
-    type: string,
-  },
+    primary: string;
+    secondary: string;
+    type: string;
+  };
   node: {
-    background: string,
-    backgroundHover: string,
-    border: string,
-    divider: string,
-  },
+    background: string;
+    backgroundHover: string;
+    border: string;
+    divider: string;
+  };
   connection: {
-    line: string,
-    start: string,
-    end: string,
-  },
+    line: string;
+    start: string;
+    end: string;
+  };
 }
 
 export const gruvboxTheme: AppTheme = {
@@ -43,8 +43,8 @@ export const gruvboxTheme: AppTheme = {
     line: "#a89984",
     start: "#689d6a",
     end: "#d79921",
-  }
-}
+  },
+};
 
 const ThemeContext = createContext(gruvboxTheme);
 
@@ -54,10 +54,8 @@ export const useTheme = () => {
     throw new Error("useTheme called outside of ThemeProvider");
   }
   return context;
-}
+};
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-  return <ThemeContext.Provider value={gruvboxTheme}>
-    {children}
-  </ThemeContext.Provider>;
+  return <ThemeContext.Provider value={gruvboxTheme}>{children}</ThemeContext.Provider>;
 };

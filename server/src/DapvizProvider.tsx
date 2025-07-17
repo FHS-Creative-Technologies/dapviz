@@ -48,9 +48,15 @@ export const useDapviz = () => {
   }
 
   return data;
-}
+};
 
-const DapvizProvider = ({ children, noConnection }: { children: ReactNode, noConnection: ReactElement }) => {
+const DapvizProvider = ({
+  children,
+  noConnection,
+}: {
+  children: ReactNode;
+  noConnection: ReactElement;
+}) => {
   const [requestFunction, setRequestFunction] = useState<DapvizRequestFunction | null>(null);
   const [programState, setProgramState] = useState<ProgramState | null>(null);
 
@@ -59,15 +65,17 @@ const DapvizProvider = ({ children, noConnection }: { children: ReactNode, noCon
 
     // NOTE: need to use the react state set function overload to set react state to a function
     // https://stackoverflow.com/a/55621325/7482275
-    ws.addEventListener("open", () => setRequestFunction(() => (request: DapvizRequest, threadId: number) => {
-      const data = new ArrayBuffer(9);
-      const view = new DataView(data);
+    ws.addEventListener("open", () =>
+      setRequestFunction(() => (request: DapvizRequest, threadId: number) => {
+        const data = new ArrayBuffer(9);
+        const view = new DataView(data);
 
-      view.setBigInt64(0, BigInt(threadId), true);
-      view.setInt8(8, request);
+        view.setBigInt64(0, BigInt(threadId), true);
+        view.setInt8(8, request);
 
-      ws.send(data);
-    }));
+        ws.send(data);
+      }),
+    );
 
     ws.addEventListener("message", (e) => {
       let json;
@@ -79,11 +87,11 @@ const DapvizProvider = ({ children, noConnection }: { children: ReactNode, noCon
       }
 
       if (json?.threads?.length > 0) {
-        setProgramState(json)
+        setProgramState(json);
       } else {
-        setProgramState(null)
+        setProgramState(null);
       }
-    })
+    });
 
     ws.addEventListener("close", () => {
       setRequestFunction(null);
@@ -91,16 +99,14 @@ const DapvizProvider = ({ children, noConnection }: { children: ReactNode, noCon
     });
 
     return () => ws.close();
-  }, [])
+  }, []);
 
-  return (
-    (requestFunction !== null && programState !== null) ? (
-      <DapvizContext.Provider value={[programState, requestFunction]}>
-        {children}
-      </DapvizContext.Provider>
-    ) : (
-      noConnection
-    )
+  return requestFunction !== null && programState !== null ? (
+    <DapvizContext.Provider value={[programState, requestFunction]}>
+      {children}
+    </DapvizContext.Provider>
+  ) : (
+    noConnection
   );
 };
 

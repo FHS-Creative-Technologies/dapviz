@@ -2,7 +2,12 @@ import { DragControls, Grid, MapControls } from "@react-three/drei";
 import { StackFrame, ThreadInfo, Variable } from "./DapvizProvider";
 import DebugJsonInfo from "./DebugJsonInfo";
 import { Container, DefaultProperties, Root, Text } from "@react-three/uikit";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./components/default/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "./components/default/accordion";
 import { HeapConnectionsProvider, useHeapConnections } from "./HeapConnectionsProvider";
 import * as THREE from "three";
 import { useEffect, useMemo, useRef } from "react";
@@ -23,31 +28,42 @@ const BackgroundGrid = () => {
         sectionSize={size}
         fadeDistance={50000}
         fadeStrength={1.0}
-        infiniteGrid />
+        infiniteGrid
+      />
     </mesh>
   );
-}
+};
 
 const StackFrameVariable = ({ variable }: { variable: Variable }) => {
   const theme = useTheme();
   return (
     <Container flexDirection="row" justifyContent="space-between" width="auto">
-      <Text fontSize={16} color={theme.text.primary}>{variable.name}</Text>
-      <Text fontSize={16} color={theme.text.primary}>{variable.value}</Text>
+      <Text fontSize={16} color={theme.text.primary}>
+        {variable.name}
+      </Text>
+      <Text fontSize={16} color={theme.text.primary}>
+        {variable.value}
+      </Text>
     </Container>
   );
-}
+};
 
 const PrimitiveVariable = ({ variable }: { variable: Variable }) => {
   const theme = useTheme();
   return (
     <Container flexDirection="row" justifyContent="space-around" width="auto" renderOrder={1}>
-      <Text fontSize={16} color={theme.text.type}>{variable.type}</Text>
-      <Text fontSize={16} color={theme.text.primary}>{variable.name}</Text>
-      <Text fontSize={16} color={theme.text.primary}>{variable.value}</Text>
+      <Text fontSize={16} color={theme.text.type}>
+        {variable.type}
+      </Text>
+      <Text fontSize={16} color={theme.text.primary}>
+        {variable.name}
+      </Text>
+      <Text fontSize={16} color={theme.text.primary}>
+        {variable.value}
+      </Text>
     </Container>
   );
-}
+};
 
 const StackFrameViz = ({ stackFrame }: { stackFrame: StackFrame }) => {
   const rootVariables = useMemo(() => {
@@ -59,15 +75,12 @@ const StackFrameViz = ({ stackFrame }: { stackFrame: StackFrame }) => {
     <Container flexDirection="column-reverse" flexGrow={1}>
       <Accordion width="auto">
         {rootVariables.map((variable) => (
-          <StackFrameVariable
-            key={variable.name}
-            variable={variable}
-          />
+          <StackFrameVariable key={variable.name} variable={variable} />
         ))}
       </Accordion>
     </Container>
   );
-}
+};
 
 const Stack = ({ thread }: { thread: ThreadInfo }) => {
   const theme = useTheme();
@@ -89,12 +102,16 @@ const Stack = ({ thread }: { thread: ThreadInfo }) => {
       </Accordion>
     </Container>
   );
-}
+};
 
-const HeapNode = ({ variable, childrenMap, initialPosition }: {
+const HeapNode = ({
+  variable,
+  childrenMap,
+  initialPosition,
+}: {
   variable: Variable;
   childrenMap: Map<number | null, Variable[]>;
-  initialPosition: [number, number, number],
+  initialPosition: [number, number, number];
 }) => {
   const theme = useTheme();
   const groupRef = useRef<THREE.Group>(null);
@@ -128,7 +145,6 @@ const HeapNode = ({ variable, childrenMap, initialPosition }: {
     }
 
     return { primitiveChildren, referenceChildren };
-
   }, [childrenMap, variable.reference]);
 
   const xOffset = 250;
@@ -137,9 +153,9 @@ const HeapNode = ({ variable, childrenMap, initialPosition }: {
   return (
     <>
       <DragControls>
-        <group ref={groupRef} position={initialPosition} >
+        <group ref={groupRef} position={initialPosition}>
           <Root justifyContent="flex-start" flexDirection="column" pixelSize={0.5}>
-            <DefaultProperties fontWeight="medium" >
+            <DefaultProperties fontWeight="medium">
               <Container
                 flexDirection="column"
                 backgroundColor={theme.node.background}
@@ -149,12 +165,27 @@ const HeapNode = ({ variable, childrenMap, initialPosition }: {
                 borderWidth={1}
                 borderColor={theme.node.border}
               >
-
-                <Container flexDirection="row" justifyContent="space-evenly" alignItems="center" paddingBottom={10}>
-                  <Text fontSize={22} color={theme.text.primary} fontWeight="bold" paddingRight={24} renderOrder={1}>
+                <Container
+                  flexDirection="row"
+                  justifyContent="space-evenly"
+                  alignItems="center"
+                  paddingBottom={10}
+                >
+                  <Text
+                    fontSize={22}
+                    color={theme.text.primary}
+                    fontWeight="bold"
+                    paddingRight={24}
+                    renderOrder={1}
+                  >
                     {variable.name}
                   </Text>
-                  <Text fontSize={16} color={theme.text.secondary} fontWeight="thin" renderOrder={1}>
+                  <Text
+                    fontSize={16}
+                    color={theme.text.secondary}
+                    fontWeight="thin"
+                    renderOrder={1}
+                  >
                     {variable.type}
                   </Text>
                 </Container>
@@ -162,23 +193,21 @@ const HeapNode = ({ variable, childrenMap, initialPosition }: {
                 <Container height={1} backgroundColor={theme.node.divider} marginY={4} />
 
                 <Container flexDirection="column" marginTop={14} gap={8}>
-                  {primitiveChildren.map(child => (
+                  {primitiveChildren.map((child) => (
                     <PrimitiveVariable key={child.name} variable={child} />
                   ))}
                 </Container>
-
               </Container>
             </DefaultProperties>
           </Root>
         </group>
-      </DragControls >
+      </DragControls>
 
       {referenceChildren.map((child, index) => {
-
         const childPosition: [number, number, number] = [
           initialPosition[0] + xOffset,
-          initialPosition[1] - (index * yOffset),
-          initialPosition[2]
+          initialPosition[1] - index * yOffset,
+          initialPosition[2],
         ];
 
         return (
@@ -189,20 +218,19 @@ const HeapNode = ({ variable, childrenMap, initialPosition }: {
             initialPosition={childPosition}
           />
         );
-      })
-      }
+      })}
     </>
   );
-}
+};
 
 const Visualizer = ({ thread }: { thread: ThreadInfo }) => {
-  const allVariables = useMemo(() =>
-    thread.stack_frames.flatMap(frame =>
-      frame.scopes.flatMap(scope => scope.variables)
-    ), [thread.stack_frames]);
+  const allVariables = useMemo(
+    () => thread.stack_frames.flatMap((frame) => frame.scopes.flatMap((scope) => scope.variables)),
+    [thread.stack_frames],
+  );
 
   const { rootHeapVariables, childrenMap } = useMemo(() => {
-    const childrenMap = new Map<number | null, Variable[]>;
+    const childrenMap = new Map<number | null, Variable[]>();
 
     for (const variable of allVariables) {
       const children = childrenMap.get(variable.parent) ?? [];
@@ -211,7 +239,7 @@ const Visualizer = ({ thread }: { thread: ThreadInfo }) => {
     }
 
     const rootVariables = childrenMap.get(null) ?? [];
-    const rootHeapVariables = rootVariables.filter(v => v.reference > 0);
+    const rootHeapVariables = rootVariables.filter((v) => v.reference > 0);
 
     return { rootHeapVariables, childrenMap };
   }, [allVariables]);
@@ -220,7 +248,13 @@ const Visualizer = ({ thread }: { thread: ThreadInfo }) => {
     <>
       <DebugJsonInfo thread={thread} />
       <DragControls>
-        <Root sizeX={175} sizeY={500} justifyContent="flex-end" flexDirection="column" pixelSize={0.5}>
+        <Root
+          sizeX={175}
+          sizeY={500}
+          justifyContent="flex-end"
+          flexDirection="column"
+          pixelSize={0.5}
+        >
           <DefaultProperties fontWeight="medium">
             <Stack thread={thread} />
           </DefaultProperties>
@@ -239,9 +273,9 @@ const Visualizer = ({ thread }: { thread: ThreadInfo }) => {
       </HeapConnectionsProvider>
 
       <BackgroundGrid />
-      <MapControls maxZoom={2} minZoom={0.10} makeDefault />
+      <MapControls maxZoom={2} minZoom={0.1} makeDefault />
     </>
   );
-}
+};
 
 export default Visualizer;

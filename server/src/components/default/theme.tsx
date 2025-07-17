@@ -1,17 +1,21 @@
 /* eslint-disable react-refresh/only-export-components */
-import { basedOnPreferredColorScheme, DefaultProperties, DefaultPropertiesProperties } from '@react-three/uikit'
-import { Color } from 'three'
+import {
+  basedOnPreferredColorScheme,
+  DefaultProperties,
+  DefaultPropertiesProperties,
+} from "@react-three/uikit";
+import { Color } from "three";
 
 function hsl(h: number, s: number, l: number) {
-  return new Color().setHSL(h / 360, s / 100, l / 100, 'srgb')
+  return new Color().setHSL(h / 360, s / 100, l / 100, "srgb");
 }
 
-const baseBorderRadius = 8
+const baseBorderRadius = 8;
 export const borderRadius = {
   lg: baseBorderRadius,
   md: baseBorderRadius - 2,
   sm: baseBorderRadius - 4,
-}
+};
 
 export const colors = basedOnPreferredColorScheme({
   light: {
@@ -56,7 +60,7 @@ export const colors = basedOnPreferredColorScheme({
     input: hsl(217.2, 32.6, 17.5),
     ring: hsl(212.7, 26.8, 83.9),
   },
-})
+});
 
 export function Defaults(props: DefaultPropertiesProperties) {
   return (
@@ -69,5 +73,5 @@ export function Defaults(props: DefaultPropertiesProperties) {
       color={colors.foreground}
       {...props}
     />
-  )
+  );
 }
