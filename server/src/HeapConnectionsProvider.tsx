@@ -4,7 +4,7 @@ import React, { createContext, useMemo, useRef } from "react";
 import { useCallback, useState } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
-
+import { useTheme } from "./ThemeProvider";
 
 export type HeapConnectionContextType = {
   registerNode: (id: number, ref: React.RefObject<THREE.Group>) => void;
@@ -13,13 +13,13 @@ export type HeapConnectionContextType = {
 
 export const HeapConnectionContext = createContext<HeapConnectionContextType | null>(null);
 
-
 interface ConnectionLineProps {
   parentRef: React.RefObject<THREE.Group>;
   childRef: React.RefObject<THREE.Group>;
 }
 
 const ConnectionLine = ({ parentRef, childRef }: ConnectionLineProps) => {
+  const theme = useTheme();
 
   const lineRef = useRef<QuadraticBezierLineRef>(null);
 
@@ -70,25 +70,23 @@ const ConnectionLine = ({ parentRef, childRef }: ConnectionLineProps) => {
         ref={lineRef}
         start={[0, 0, 0]}
         end={[0, 0, 0]}
-        color="#a89984"
+        color={theme.connection.line}
         lineWidth={1}
       />
 
       <mesh ref={startCircleRef}>
         <circleGeometry args={[2.5, 16]} />
-        <meshBasicMaterial color="#689d6a" />
+        <meshBasicMaterial color={theme.connection.start} />
       </mesh>
       <mesh ref={endCircleRef}>
         <circleGeometry args={[2.5, 16]} />
-        <meshBasicMaterial color="#d79921" />
+        <meshBasicMaterial color={theme.connection.end} />
       </mesh>
     </>
-
   );
 }
 
 export const HeapConnectionsProvider = ({ children, allVariables }: { children: React.ReactNode, allVariables: Variable[] }) => {
-
   const [nodeRefs, setNodeRefs] = useState<Map<number, React.RefObject<THREE.Group>>>(new Map());
 
   const registerNode = useCallback((id: number, ref: React.RefObject<THREE.Group>) => {

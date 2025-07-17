@@ -6,17 +6,18 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./
 import { HeapConnectionContext, HeapConnectionsProvider } from "./HeapConnectionsProvider";
 import * as THREE from "three";
 import { useContext, useEffect, useMemo, useRef } from "react";
-
+import { useTheme } from "./ThemeProvider";
 
 const BackgroundGrid = () => {
+  const theme = useTheme();
   const size = 100;
   const thickness = 1.5;
   return (
     <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, -10]}>
       <Grid
-        cellColor={"#444"}
+        cellColor={theme.grid.cell}
         cellThickness={thickness / 1.5}
-        sectionColor={"#444"}
+        sectionColor={theme.grid.section}
         sectionThickness={thickness}
         cellSize={size / 2}
         sectionSize={size}
@@ -28,27 +29,27 @@ const BackgroundGrid = () => {
 }
 
 const StackFrameVariable = ({ variable }: { variable: Variable }) => {
+  const theme = useTheme();
   return (
     <Container flexDirection="row" justifyContent="space-between" width="auto">
-      <Text fontSize={16} color="white">{variable.name}</Text>
-      <Text fontSize={16} color="white">{variable.value}</Text>
+      <Text fontSize={16} color={theme.text.primary}>{variable.name}</Text>
+      <Text fontSize={16} color={theme.text.primary}>{variable.value}</Text>
     </Container>
   );
 }
 
-
 const PrimitiveVariable = ({ variable }: { variable: Variable }) => {
+  const theme = useTheme();
   return (
     <Container flexDirection="row" justifyContent="space-around" width="auto" renderOrder={1}>
-      <Text fontSize={16} color="#d65d0e">{variable.type}</Text>
-      <Text fontSize={16} color="#ebdbb2">{variable.name}</Text>
-      <Text fontSize={16} color="#ebdbb2">{variable.value}</Text>
+      <Text fontSize={16} color={theme.text.type}>{variable.type}</Text>
+      <Text fontSize={16} color={theme.text.primary}>{variable.name}</Text>
+      <Text fontSize={16} color={theme.text.primary}>{variable.value}</Text>
     </Container>
   );
 }
 
 const StackFrameViz = ({ stackFrame }: { stackFrame: StackFrame }) => {
-
   const rootVariables = useMemo(() => {
     const allFrameVariables = stackFrame.scopes.flatMap((scope) => scope.variables);
     return allFrameVariables.filter((variable) => variable.parent === null);
@@ -69,13 +70,14 @@ const StackFrameViz = ({ stackFrame }: { stackFrame: StackFrame }) => {
 }
 
 const Stack = ({ thread }: { thread: ThreadInfo }) => {
+  const theme = useTheme();
   return (
     <Container flexDirection="column" width="auto">
       <Accordion width="auto">
         {thread.stack_frames.map((stackFrame, i) => (
           <AccordionItem key={i} width="auto" value={stackFrame.function}>
             <AccordionTrigger>
-              <Text fontSize={24} color="white">
+              <Text fontSize={24} color={theme.text.primary}>
                 {stackFrame.function}
               </Text>
             </AccordionTrigger>
@@ -94,7 +96,7 @@ const HeapNode = ({ variable, allVariables, initialPosition }: {
   allVariables: Variable[];
   initialPosition: [number, number, number],
 }) => {
-
+  const theme = useTheme();
   const groupRef = useRef<THREE.Group>(null);
   const context = useContext(HeapConnectionContext);
 
@@ -142,24 +144,24 @@ const HeapNode = ({ variable, allVariables, initialPosition }: {
             <DefaultProperties fontWeight="medium" >
               <Container
                 flexDirection="column"
-                backgroundColor={"#282828"}
-                hover={{ backgroundColor: "#3c3836" }}
+                backgroundColor={theme.node.background}
+                hover={{ backgroundColor: theme.node.backgroundHover }}
                 padding={15}
                 borderRadius={12}
                 borderWidth={1}
-                borderColor={"#504945"}
+                borderColor={theme.node.border}
               >
 
                 <Container flexDirection="row" justifyContent="space-evenly" alignItems="center" paddingBottom={10}>
-                  <Text fontSize={22} color="#ebdbb2" fontWeight="bold" paddingRight={24} renderOrder={1}>
+                  <Text fontSize={22} color={theme.text.primary} fontWeight="bold" paddingRight={24} renderOrder={1}>
                     {variable.name}
                   </Text>
-                  <Text fontSize={16} color="#a89984" fontWeight="thin" renderOrder={1}>
+                  <Text fontSize={16} color={theme.text.secondary} fontWeight="thin" renderOrder={1}>
                     {variable.type}
                   </Text>
                 </Container>
 
-                <Container height={1} backgroundColor="#4A4A5A" marginY={4} />
+                <Container height={1} backgroundColor={theme.node.divider} marginY={4} />
 
                 <Container flexDirection="column" marginTop={14} gap={8}>
                   {primitiveChildren.map(child => (
@@ -182,14 +184,12 @@ const HeapNode = ({ variable, allVariables, initialPosition }: {
         ];
 
         return (
-
           <HeapNode
             key={child.name}
             variable={child}
             allVariables={allVariables}
             initialPosition={childPosition}
           />
-
         );
       })
       }
@@ -198,7 +198,6 @@ const HeapNode = ({ variable, allVariables, initialPosition }: {
 }
 
 const Visualizer = ({ thread }: { thread: ThreadInfo }) => {
-
   const allVariables = useMemo(() =>
     thread.stack_frames.flatMap(frame =>
       frame.scopes.flatMap(scope => scope.variables)
