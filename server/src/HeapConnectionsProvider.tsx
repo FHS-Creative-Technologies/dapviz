@@ -1,6 +1,6 @@
 import { Variable } from "./DapvizProvider";
 import { QuadraticBezierLine, QuadraticBezierLineRef } from "@react-three/drei";
-import React, { createContext, useMemo, useRef } from "react";
+import React, { createContext, useContext, useMemo, useRef } from "react";
 import { useCallback, useState } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
@@ -12,6 +12,14 @@ export type HeapConnectionContextType = {
 };
 
 export const HeapConnectionContext = createContext<HeapConnectionContextType | null>(null);
+
+export const useHeapConnections = () => {
+  const context = useContext(HeapConnectionContext);
+  if (!context) {
+    throw new Error("useHeapConnections called outside of HeapConnectionsProvider");
+  }
+  return context;
+}
 
 interface ConnectionLineProps {
   parentRef: React.RefObject<THREE.Group>;

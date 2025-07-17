@@ -3,9 +3,9 @@ import { StackFrame, ThreadInfo, Variable } from "./DapvizProvider";
 import DebugJsonInfo from "./DebugJsonInfo";
 import { Container, DefaultProperties, Root, Text } from "@react-three/uikit";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./components/default/accordion";
-import { HeapConnectionContext, HeapConnectionsProvider } from "./HeapConnectionsProvider";
+import { HeapConnectionsProvider, useHeapConnections } from "./HeapConnectionsProvider";
 import * as THREE from "three";
-import { useContext, useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useTheme } from "./ThemeProvider";
 
 const BackgroundGrid = () => {
@@ -98,13 +98,9 @@ const HeapNode = ({ variable, allVariables, initialPosition }: {
 }) => {
   const theme = useTheme();
   const groupRef = useRef<THREE.Group>(null);
-  const context = useContext(HeapConnectionContext);
+  const heapConnections = useHeapConnections();
 
-  if (!context) {
-    throw new Error("HeapNode must be used within a HeapConnectionsProvider");
-  }
-
-  const { registerNode, unregisterNode } = context;
+  const { registerNode, unregisterNode } = heapConnections;
 
   useEffect(() => {
     if (variable.reference > 0 && groupRef.current) {
