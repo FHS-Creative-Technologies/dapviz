@@ -115,16 +115,14 @@ export const HeapConnectionsProvider = ({ children, allVariables }: { children: 
           const parentRef = nodeRefs.get(variable.parent as number);
           const childRef = nodeRefs.get(variable.reference);
 
-          if (parentRef && childRef) {
-            return (
-              <ConnectionLine
-                key={`${variable.parent}-${variable.reference}`}
-                parentRef={parentRef}
-                childRef={childRef}
-              />
-            );
-          }
-          return null;
+          if (!parentRef || !childRef) return null;
+          return (
+            <ConnectionLine
+              key={`${variable.parent}-${variable.reference}`}
+              parentRef={parentRef}
+              childRef={childRef}
+            />
+          );
         })}
       </group>
     </HeapConnectionContext.Provider>
