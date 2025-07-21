@@ -1,118 +1,187 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
-int a;
-int b = 44;
-float c = 32.4f;
-double d = 420.69;
-
-string favouriteFood = "pickles";
-
-int test(int a, int b)
+public static class Program
 {
-    return a + b;
-}
-
-a = 43;
-
-int e = test(a, b);
-e = test((int)c, (int)d);
-
-var mat = new Matrix()
-{
-    Row0 = new Vector
+    public static void Main(string[] args)
     {
-        X = 0,
-        Y = 1,
-        Z = 0,
-    },
-    Row1 = new Vector
-    {
-        X = 1,
-        Y = 0,
-        Z = 0,
-    },
-    Row2 = new Vector
-    {
-        X = 0,
-        Y = 0,
-        Z = 1,
-    },
-};
-
-var vec = new Vector
-{
-    X = 42,
-    Y = 13,
-    Z = 37,
-};
-
-var nested = new NestedClass
-{
-    mat = new Matrix()
-    {
-        Row0 = new Vector
-        {
-            X = 32,
-            Y = 64,
-            Z = 128,
-        },
-
-        Row1 = new Vector
-        {
-            X = 1,
-            Y = 2,
-            Z = 3,
-        },
-
-        Row2 = new Vector
-        {
-            X = 5,
-            Y = 6,
-            Z = 9,
-        },
-    },
-
-    name = "mat",
-    age = 33
-};
-
-
-var result = mat.Apply(vec);
-
-for (int i = 0; i < 10; ++i)
-{
-    Console.Write(i);
-}
-
-Console.WriteLine($"Hello, World. I love eating {favouriteFood}");
-
-class Vector
-{
-    public int X { get; init; }
-    public int Y { get; init; }
-    public int Z { get; init; }
-}
-class Matrix
-{
-    public required Vector Row0 { get; init; }
-    public required Vector Row1 { get; init; }
-    public required Vector Row2 { get; init; }
-
-    public Vector Apply(Vector target)
-    {
-        return new Vector
-        {
-            X = Row0.X * target.X + Row0.Y * target.Y + Row0.Z * target.Z,
-            Y = Row1.X * target.X + Row1.Y * target.Y + Row1.Z * target.Z,
-            Z = Row2.X * target.X + Row2.Y * target.Y + Row2.Z * target.Z
-        };
+        new VariablesTest().Run();
+        new HeapObjectsTest().Run();
+        new DataStructuresTest().Run();
     }
 }
 
-class NestedClass
+public class VariablesTest
 {
-    public required Matrix mat { get; init; }
-    public required string name { get; init; }
-    public required int age { get; init; }
+    private int member_a = 12;
+    private string member_string = "interesting";
+
+    public void Run()
+    {
+        int stack_a;
+        int stack_b = 44;
+        float stack_c = 32.4f;
+        double stack_d = 420.69;
+
+        string @string = "hello";
+
+        stack_a = -50;
+
+        Console.WriteLine($"{stack_a}, {stack_b}, {stack_c}, {stack_d}, {@string}");
+    }
 }
 
+public class HeapObjectsTest
+{
+    private class Vector3
+    {
+        public float X { get; init; }
+        public float Y { get; init; }
+        public float Z { get; init; }
+    }
+
+    private class VectorScaler
+    {
+        private readonly Vector3 vec;
+        private readonly float multiplier;
+
+        public VectorScaler(Vector3 vec, float multiplier)
+        {
+            this.vec = vec;
+            this.multiplier = multiplier;
+        }
+
+        public Vector3 Apply()
+        {
+            return new Vector3()
+            {
+                X = vec.X * multiplier,
+                Y = vec.Y * multiplier,
+                Z = vec.Z * multiplier,
+            };
+        }
+    }
+
+    public void Run()
+    {
+        var vector = new Vector3()
+        {
+            X = 5,
+            Y = 10,
+            Z = 50,
+        };
+
+        var doubler = new VectorScaler(vector, 2.0f);
+        var halver = new VectorScaler(vector, 0.5f);
+
+        var undoer = new VectorScaler(doubler.Apply(), 0.5f);
+        undoer.Apply();
+        halver.Apply();
+    }
+}
+
+public class DataStructuresTest
+{
+    public void Run()
+    {
+        RunList();
+        RunDictionary();
+        RunTree();
+        RunStack();
+        RunQueue();
+        RunGraph();
+    }
+
+    private void RunList()
+    {
+        var list = new List<int> { 1, 2, 3, 4, 5 };
+        list.Add(6);
+        list.Remove(3);
+
+        Console.WriteLine("List contents:");
+        foreach (var item in list)
+        {
+            Console.WriteLine(item);
+        }
+    }
+
+    private void RunDictionary()
+    {
+        var dictionary = new Dictionary<string, int>
+        {
+            { "one", 1 },
+            { "two", 2 },
+            { "three", 3 }
+        };
+
+        dictionary["four"] = 4;
+        dictionary.Remove("two");
+
+        Console.WriteLine("Dictionary contents:");
+        foreach (var (key, value) in dictionary)
+        {
+            Console.WriteLine($"{key}: {value}");
+        }
+    }
+
+    private void RunTree()
+    {
+        var tree = new SortedSet<int> { 5, 3, 8, 1, 4 };
+        tree.Add(7);
+        tree.Remove(3);
+
+        Console.WriteLine("Tree contents:");
+        foreach (var item in tree)
+        {
+            Console.WriteLine(item);
+        }
+    }
+
+    private void RunStack()
+    {
+        var stack = new Stack<int>();
+        stack.Push(1);
+        stack.Push(2);
+        stack.Push(3);
+        Console.WriteLine("Stack contents:");
+        while (stack.Count > 0)
+        {
+            Console.WriteLine(stack.Pop());
+        }
+    }
+
+    private void RunQueue()
+    {
+        var queue = new Queue<int>();
+        queue.Enqueue(1);
+        queue.Enqueue(2);
+        queue.Enqueue(3);
+        Console.WriteLine("Queue contents:");
+        while (queue.Count > 0)
+        {
+            Console.WriteLine(queue.Dequeue());
+        }
+    }
+
+    private void RunGraph()
+    {
+        var graph = new Dictionary<int, List<int>>
+        {
+            { 1, new List<int> { 2, 3 } },
+            { 2, new List<int> { 4 } },
+            { 3, new List<int> { 4, 5 } },
+            { 4, new List<int> { } },
+            { 5, new List<int> { } }
+        };
+
+        Console.WriteLine("Graph adjacency list:");
+        foreach (var node in graph)
+        {
+            Console.Write($"{node.Key}: ");
+            foreach (var edge in node.Value)
+            {
+                Console.Write($"{edge} ");
+            }
+            Console.WriteLine();
+        }
+    }
+}
