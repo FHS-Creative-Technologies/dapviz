@@ -85,20 +85,22 @@ const StackFrameViz = ({ stackFrame }: { stackFrame: StackFrame }) => {
 const Stack = ({ thread }: { thread: ThreadInfo }) => {
   const theme = useTheme();
   return (
-    <Container flexDirection="column" width="auto">
+    <Container flexDirection="column" width="auto" backgroundColor={theme.node.background} borderRadius={12} borderColor={theme.node.border} padding={24}>
       <Accordion width="auto">
         {thread.stack_frames.map((stackFrame, i) => (
-          <AccordionItem key={i} width="auto" value={stackFrame.function}>
+          <AccordionItem key={i} width="auto" value={stackFrame.function} paddingY={8}>
             <AccordionTrigger>
               <Text fontSize={24} color={theme.text.primary}>
                 {stackFrame.function}
               </Text>
             </AccordionTrigger>
-            <AccordionContent width="auto">
+            <AccordionContent width="auto" paddingY={24}>
               <StackFrameViz stackFrame={stackFrame} />
             </AccordionContent>
+            <Container height={1} backgroundColor={theme.node.divider} marginY={4} />
           </AccordionItem>
         ))}
+
       </Accordion>
     </Container>
   );
