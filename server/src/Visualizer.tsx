@@ -86,6 +86,8 @@ const Stack = ({ thread }: { thread: ThreadInfo }) => {
   const theme = useTheme();
   return (
     <Container flexDirection="column" width="auto" backgroundColor={theme.node.background} borderRadius={12} borderColor={theme.node.border} padding={24}>
+      <Text fontSize={48} textAlign="center" fontWeight="bold" color={theme.text.primary} padding={14}>Stack</Text>
+      <Container height={1} backgroundColor={theme.node.divider} marginY={24} />
       <Accordion width="auto">
         {thread.stack_frames.map((stackFrame, i) => (
           <AccordionItem key={i} width="auto" value={stackFrame.function} paddingY={8}>
@@ -100,7 +102,6 @@ const Stack = ({ thread }: { thread: ThreadInfo }) => {
             <Container height={1} backgroundColor={theme.node.divider} marginY={4} />
           </AccordionItem>
         ))}
-
       </Accordion>
     </Container>
   );
