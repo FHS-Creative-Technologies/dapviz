@@ -249,8 +249,6 @@ const Visualizer = ({ thread }: { thread: ThreadInfo }) => {
       <DebugJsonInfo thread={thread} />
       <DragControls>
         <Root
-          sizeX={175}
-          sizeY={500}
           justifyContent="flex-end"
           flexDirection="column"
           pixelSize={0.5}
