@@ -51,14 +51,14 @@ const StackFrameVariable = ({ variable }: { variable: Variable }) => {
 const PrimitiveVariable = ({ variable }: { variable: Variable }) => {
   const theme = useTheme();
   return (
-    <Container flexDirection="row" justifyContent="space-around" width="auto" renderOrder={1}>
-      <Text fontSize={16} color={theme.text.type}>
+    <Container flexDirection="row" width="auto" gap={8} alignItems="center" renderOrder={1} paddingX={14}>
+      <Text fontSize={16} color={theme.text.type} width={60} textAlign="left">
         {variable.type}
       </Text>
-      <Text fontSize={16} color={theme.text.primary}>
+      <Text fontSize={16} color={theme.text.primary} flexGrow={1} textAlign="left">
         {variable.name}
       </Text>
-      <Text fontSize={16} color={theme.text.primary}>
+      <Text fontSize={16} color={theme.text.primary} textAlign="right">
         {variable.value}
       </Text>
     </Container>
