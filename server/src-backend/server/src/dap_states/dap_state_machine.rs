@@ -1,4 +1,4 @@
-use std::cell::Cell;
+use std::{cell::Cell, collections::HashMap};
 
 use dap_types::types::{ProtocolMessage, ProtocolMessageType, RequestArguments};
 
@@ -10,26 +10,6 @@ use super::{
     dap_state::{DapState, DapStateHandler},
     states::uninitialized::Uninitialized,
 };
-
-impl From<&dap_types::types::Variable> for VariableInfo {
-    fn from(value: &dap_types::types::Variable) -> Self {
-        let data = VariableInfoData {
-            parent: None,
-            reference: value.variables_reference,
-            name: value.name.clone(),
-            value: value.value.clone(),
-            type_: value
-                .type_
-                .clone()
-                .unwrap_or("[[Type not provided]]".into()),
-        };
-
-        match value.variables_reference {
-            0 => VariableInfo::Queried(data),
-            _ => VariableInfo::Unqueried(data),
-        }
-    }
-}
 
 impl VariableInfo {
     pub fn with_parent(self, parent: i64) -> Self {
@@ -59,6 +39,7 @@ pub struct VariableInfoData {
     pub reference: i64,
     pub name: String,
     pub value: String,
+    pub address: String,
 
     #[serde(rename = "type")]
     pub type_: String,
@@ -131,6 +112,53 @@ impl ProgramState {
                     stack_frames: None,
                 })
                 .collect(),
+            ..Default::default()
+        }
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct VariableResolver {
+    lookup: HashMap<String, i64>,
+}
+
+impl VariableResolver {
+    pub fn new() -> Self {
+        Default::default()
+    }
+
+    pub fn resolve(&mut self, variable: &dap_types::types::Variable) -> VariableInfo {
+        let memory_reference = variable
+            .memory_reference
+            .clone()
+            .expect("dap server must send memoryReference field");
+
+        let first_encountered_reference = *self
+            .lookup
+            .entry(memory_reference.clone())
+            .or_insert(variable.variables_reference);
+
+        let data = VariableInfoData {
+            parent: None,
+            // in the frontend we assume that the same reference means its the same variable, so
+            // set this to the same value as the first time we encountered it
+            reference: first_encountered_reference,
+            name: variable.name.clone(),
+            value: variable.value.clone(),
+            address: memory_reference,
+            type_: variable
+                .type_
+                .clone()
+                .unwrap_or("[[Type not provided]]".into()),
+        };
+
+        match variable.variables_reference {
+            0 => VariableInfo::Queried(data),
+            // we only want to query this variable further if we come across it the first time
+            this_reference if this_reference == first_encountered_reference => {
+                VariableInfo::Unqueried(data)
+            }
+            _ => VariableInfo::Queried(data),
         }
     }
 }
@@ -145,6 +173,7 @@ pub struct DapContext {
     pub debug_adapter: DebugAdapter,
     pub executable_path: String,
     pub program_state: Option<ProgramState>,
+    pub variable_resolver: VariableResolver,
 }
 
 #[derive(Debug)]
@@ -163,6 +192,7 @@ impl DapStateMachine {
                 debug_adapter,
                 executable_path,
                 program_state: None,
+                variable_resolver: VariableResolver::new(),
             },
             might_have_new_requests: true.into(),
             program_terminated: false,
