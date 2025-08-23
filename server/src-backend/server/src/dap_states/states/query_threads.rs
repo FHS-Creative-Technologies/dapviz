@@ -2,7 +2,7 @@ use dap_types::types::{RequestArguments, ResponseBody};
 
 use crate::dap_states::{
     dap_state::{DapState, DapStateHandler},
-    dap_state_machine::{DapContext, ProgramState},
+    dap_state_machine::{DapContext, ProgramState, VariableResolver},
 };
 
 use super::query_stack_traces::QueryStackTraces;
@@ -26,6 +26,8 @@ impl DapStateHandler for QueryThreads {
         match response {
             ResponseBody::threads(threads) => {
                 context.program_state = Some(ProgramState::from_threads(&threads.threads));
+                context.variable_resolver = VariableResolver::new();
+
                 Some(QueryStackTraces.into())
             }
             _ => {
