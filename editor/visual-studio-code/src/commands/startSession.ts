@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { ensureDapvizInstall } from '../shared';
+import { ensureDapvizInstall, getSupportedDebugAdapters } from '../shared';
 import WebSocket from 'ws';
 import { promisify } from 'util';
 import { ExtensionState, getExtensionState, setExtensionState } from '../extension';
@@ -41,13 +41,25 @@ export default async (context: vscode.ExtensionContext) => {
     }
 
     const dapvizPath = await ensureDapvizInstall(context);
-    const workspacePath = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
 
-    // TODO: let user choose
-    const executablePath = `${workspacePath}/bin/Debug/net10.0/csharp.dll`;
+    const uri = await vscode.window.showOpenDialog({
+        canSelectMany: false,
+        openLabel: "Debug executable",
+    });
 
-    // TODO: let user choose
-    const debugAdapter = "netcoredbg";
+    const executablePath = uri?.[0].fsPath;
+
+    if (!executablePath) {
+        return;
+    }
+
+    const debugAdapter = await vscode.window.showQuickPick(await getSupportedDebugAdapters(dapvizPath), {
+        placeHolder: "Select the debug adapter use"
+    });
+
+    if (!executablePath) {
+        return;
+    }
 
     let terminal: vscode.Terminal | null;
 
@@ -56,7 +68,7 @@ export default async (context: vscode.ExtensionContext) => {
             name: "dapviz",
         });
 
-        terminal.sendText(`RUST_LOG="debug" LOG_OUTPUT="stderr" ${dapvizPath} launch -p ${PORT} --debug-adapter ${debugAdapter} "${executablePath}"`);
+        terminal.sendText(`RUST_LOG="debug" LOG_OUTPUT="stderr" ${dapvizPath} launch -p ${PORT} --debug-adapter ${debugAdapter} --debugger-path /usr/local/netcoredbg "${executablePath}"`);
         terminal.show(true);
 
     } catch (e) {

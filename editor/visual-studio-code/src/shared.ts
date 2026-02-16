@@ -2,6 +2,10 @@ import { existsSync } from "fs";
 import { platform } from "os";
 import path from "path";
 import * as vscode from "vscode";
+import { exec } from "child_process";
+import { promisify } from "util";
+
+export const execAsync = promisify(exec);
 
 enum Os {
     Linux = "linux",
@@ -62,4 +66,9 @@ export const ensureDapvizInstall = async (context: vscode.ExtensionContext): Pro
     }
 
     return executablePath;
+};
+
+export const getSupportedDebugAdapters = async (dapvizPath: string): Promise<string[]> => {
+    const commandResult = await execAsync(`${dapvizPath} list-debug-adapters`);
+    return commandResult.stdout.split(/\r?\n|\r/).filter(line => line.length > 0);
 };
