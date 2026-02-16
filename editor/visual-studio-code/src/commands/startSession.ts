@@ -44,7 +44,7 @@ export default async (context: vscode.ExtensionContext) => {
     const workspacePath = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
 
     // TODO: let user choose
-    const executablePath = `${workspacePath}/bin/Debug/net9.0/csharp.dll`;
+    const executablePath = `${workspacePath}/bin/Debug/net10.0/csharp.dll`;
 
     // TODO: let user choose
     const debugAdapter = "netcoredbg";
