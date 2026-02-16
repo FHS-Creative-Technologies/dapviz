@@ -18,11 +18,6 @@
     "lint:fix:rust": "cd src-backend && cargo fix"
   },
   "dependencies": {
-    "@react-three/drei": "^10.7.3",
-    "@react-three/fiber": "^9.3.0",
-    "@react-three/uikit": "^0.8.21",
-    "@react-three/uikit-lucide": "^0.8.21",
-    "@types/three": "^0.179.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "three": "^0.179.1"
