@@ -111,6 +111,8 @@ impl DapStateHandler for QueryVariables {
             .as_mut()
             .expect("current state expects initialized program state");
 
+        let resolver = &mut context.variable_resolver;
+
         let ResponseBody::variables(response) = response else {
             tracing::error!("Unexpected response: {:?}", response);
             return None;
@@ -125,7 +127,7 @@ impl DapStateHandler for QueryVariables {
                 scope.variables = response
                     .variables
                     .iter()
-                    .map(VariableInfo::from)
+                    .map(|variable| resolver.resolve(variable))
                     .collect::<Vec<_>>()
                     .into()
             }
@@ -138,19 +140,15 @@ impl DapStateHandler for QueryVariables {
                 // TODO: can we get rid of this clone?
                 variables[variable_index] = variables[variable_index].clone().into_queried();
                 let variables_reference = match &variables[variable_index] {
-                    VariableInfo::Queried(variable_info_data) => {
-                        variable_info_data.reference
-                    }
-                    VariableInfo::Unqueried(variable_info_data) => {
-                        variable_info_data.reference
-                    }
+                    VariableInfo::Queried(variable_info_data) => variable_info_data.reference,
+                    VariableInfo::Unqueried(variable_info_data) => variable_info_data.reference,
                 };
 
                 variables.append(
                     &mut response
                         .variables
                         .iter()
-                        .map(|v| VariableInfo::from(v).with_parent(variables_reference))
+                        .map(|variable| resolver.resolve(variable).with_parent(variables_reference))
                         .collect::<Vec<_>>(),
                 );
             }
