@@ -5,27 +5,35 @@ import { useState } from "react";
 import { ThemeProvider } from "./ThemeProvider";
 
 const NoConnectionError = () => (
-    <h1 style={{ margin: "auto", textAlign: "center" }}>No Connection</h1>
+  <div className="flex flex-col items-center justify-center h-full w-full">
+    <main>
+      <h1 className="text-2xl mb-2">No Connection</h1>
+      <p>Lost connection to dapviz server.</p>
+    </main>
+  </div>
 );
 
 const DapvizApp = () => {
-    const [programState] = useDapviz();
-    const [currentThread, setCurrentThread] = useState<number>(0);
+  const [visualizationState] = useDapviz();
+  const [currentThread, setCurrentThread] = useState<number>(0);
 
-    return (
-        <>
-            <Visualizer thread={programState.threads[currentThread]} />
-            <Controls currentThread={currentThread} setCurrentThread={setCurrentThread} />
-        </>
-    );
+  return (
+    <>
+      <Visualizer
+        thread={visualizationState.threads[currentThread]}
+        heapVariables={visualizationState.heap_variables}
+      />
+      <Controls currentThread={currentThread} setCurrentThread={setCurrentThread} />
+    </>
+  );
 };
 
 const App = () => (
-    <ThemeProvider>
-        <DapvizProvider noConnection={<NoConnectionError />}>
-            <DapvizApp />
-        </DapvizProvider>
-    </ThemeProvider>
+  <ThemeProvider>
+    <DapvizProvider noConnection={<NoConnectionError />}>
+      <DapvizApp />
+    </DapvizProvider>
+  </ThemeProvider>
 );
 
 export default App;

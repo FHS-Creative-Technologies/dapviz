@@ -31,6 +31,20 @@ impl VariableInfo {
             VariableInfo::Unqueried(data) => VariableInfo::Queried(data),
         }
     }
+
+    pub fn into_inner(self) -> VariableInfoData {
+        match self {
+            VariableInfo::Queried(variable_info_data) => variable_info_data,
+            VariableInfo::Unqueried(variable_info_data) => variable_info_data,
+        }
+    }
+
+    pub fn inner(&self) -> &VariableInfoData {
+        match self {
+            VariableInfo::Queried(variable_info_data) => variable_info_data,
+            VariableInfo::Unqueried(variable_info_data) => variable_info_data,
+        }
+    }
 }
 
 #[derive(Serialize, Clone, Debug, Default)]

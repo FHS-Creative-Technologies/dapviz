@@ -10,13 +10,14 @@ use clap::Subcommand;
 use clap::ValueEnum;
 use dap_client::DapClient;
 use dap_client::DapLaunchInfo;
-use dap_states::dap_state_machine::ProgramState;
 use debug_adapters::DebugAdapter;
 use debug_adapters::DebugAdapterFunctions;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::EnvFilter;
 use user_request::UserRequest;
 use webserver::Webserver;
+
+use crate::dap_states::visualization_state::VisualizationState;
 
 pub mod dap_client;
 pub mod dap_states;
@@ -112,14 +113,14 @@ async fn main() -> anyhow::Result<()> {
 
     match cli.command {
         Command::Launch(launch_info) => {
-            let (program_state_sender, program_state_receiver) =
-                tokio::sync::watch::channel::<ProgramState>(ProgramState::default());
+            let (visualization_state_sender, visualization_state_receiver) =
+                tokio::sync::watch::channel::<VisualizationState>(VisualizationState::default());
 
             let (user_request_sender, user_request_receiver) =
                 tokio::sync::broadcast::channel::<UserRequest>(64);
 
-            let webserver = Webserver::new(program_state_receiver, user_request_sender);
-            let dap_client = DapClient::new(program_state_sender, user_request_receiver);
+            let webserver = Webserver::new(visualization_state_receiver, user_request_sender);
+            let dap_client = DapClient::new(visualization_state_sender, user_request_receiver);
 
             let dap_launch_info = (&launch_info).try_into()?;
 

@@ -13,7 +13,7 @@ use tokio::{
 };
 
 use crate::{
-    dap_states::dap_state_machine::{DapStateMachine, ProgramState},
+    dap_states::{dap_state_machine::DapStateMachine, visualization_state::VisualizationState},
     debug_adapters::DebugAdapter,
     user_request::UserRequest,
 };
@@ -25,7 +25,7 @@ pub struct DapLaunchInfo {
 }
 
 pub struct DapClient {
-    program_state_sender: tokio::sync::watch::Sender<ProgramState>,
+    visualization_state_sender: tokio::sync::watch::Sender<VisualizationState>,
     user_request_receiver: tokio::sync::broadcast::Receiver<UserRequest>,
 }
 
@@ -177,11 +177,11 @@ impl DapProcess {
 
 impl DapClient {
     pub fn new(
-        program_state_sender: tokio::sync::watch::Sender<ProgramState>,
+        visualization_state_sender: tokio::sync::watch::Sender<VisualizationState>,
         user_request_receiver: tokio::sync::broadcast::Receiver<UserRequest>,
     ) -> Self {
         DapClient {
-            program_state_sender,
+            visualization_state_sender,
             user_request_receiver,
         }
     }
@@ -199,11 +199,10 @@ impl DapClient {
             }
 
             if let Some(program_state) = state_machine.current_program_state() {
-                if self
-                    .program_state_sender
-                    .send(program_state.clone())
-                    .is_err()
-                {
+                let viz = VisualizationState::from(program_state);
+                tracing::debug!(visualization = ?viz, internal = ?program_state, "Sending state to connected clients");
+
+                if self.visualization_state_sender.send(viz).is_err() {
                     break;
                 }
             }

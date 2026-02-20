@@ -1,44 +1,44 @@
 use std::{ops::Deref, sync::Arc};
 
 use axum::{
+    Router,
     extract::{
-        ws::{Message, WebSocket},
         State, WebSocketUpgrade,
+        ws::{Message, WebSocket},
     },
     http::StatusCode,
     response::IntoResponse,
     routing::get,
-    Router,
 };
 use tokio::net::TcpListener;
 
-use crate::{dap_states::dap_state_machine::ProgramState, user_request::UserRequest};
+use crate::{dap_states::visualization_state::VisualizationState, user_request::UserRequest};
 
 pub struct Webserver {
-    program_state_receiver: tokio::sync::watch::Receiver<ProgramState>,
+    visualization_state_receiver: tokio::sync::watch::Receiver<VisualizationState>,
     user_request_sender: tokio::sync::broadcast::Sender<UserRequest>,
 }
 
 #[derive(Clone)]
 struct AppState {
-    program_state: Arc<tokio::sync::watch::Receiver<ProgramState>>,
+    visualization_state: Arc<tokio::sync::watch::Receiver<VisualizationState>>,
     request_sender: Arc<tokio::sync::broadcast::Sender<UserRequest>>,
 }
 
 impl Webserver {
     pub fn new(
-        program_state_receiver: tokio::sync::watch::Receiver<ProgramState>,
+        visualization_state_receiver: tokio::sync::watch::Receiver<VisualizationState>,
         user_request_sender: tokio::sync::broadcast::Sender<UserRequest>,
     ) -> Self {
         Webserver {
-            program_state_receiver,
+            visualization_state_receiver,
             user_request_sender,
         }
     }
 
     pub async fn serve(self, address: impl tokio::net::ToSocketAddrs) -> anyhow::Result<()> {
         let state = AppState {
-            program_state: Arc::new(self.program_state_receiver),
+            visualization_state: Arc::new(self.visualization_state_receiver),
             request_sender: Arc::new(self.user_request_sender),
         };
 
@@ -69,7 +69,7 @@ async fn initialize_events_websocket(
     ws.on_upgrade(move |socket| {
         handle_socket(
             socket,
-            state.program_state.deref().clone(),
+            state.visualization_state.deref().clone(),
             state.request_sender.deref().clone(),
         )
     })
@@ -77,7 +77,7 @@ async fn initialize_events_websocket(
 
 async fn handle_socket(
     mut socket: WebSocket,
-    mut program_state: tokio::sync::watch::Receiver<ProgramState>,
+    mut program_state: tokio::sync::watch::Receiver<VisualizationState>,
     request_sender: tokio::sync::broadcast::Sender<UserRequest>,
 ) {
     loop {
