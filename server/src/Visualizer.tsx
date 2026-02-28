@@ -3,8 +3,11 @@ import {
   BackgroundVariant,
   ControlButton,
   Controls,
+  Edge,
+  Handle,
   Node,
   NodeProps,
+  Position,
   ReactFlow,
 } from "@xyflow/react";
 import { HeapVariable, StackFrame, ThreadInfo, Variable } from "./DapvizProvider";
@@ -35,11 +38,23 @@ export const StackFrameNodeComponent = (props: NodeProps<StackFrameNode>) => {
           scope.variables
             .filter((variable) => variable.parent == null)
             .map((variable) => (
-              <li className="text-sm" key={variable.name}>
+              <li className="relative text-sm" key={variable.name}>
                 {variable.name}
                 <span className="text-xs opacity-20">
                   {" "}
-                  {isHeapVariable(variable) ? variable.address : variable.value}
+                  {isHeapVariable(variable) ? (
+                    <>
+                      {variable.address}
+                      <Handle
+                        className="absolute right-0 -mr-3"
+                        type="source"
+                        position={Position.Right}
+                        id={`out-${variable.name}-${variable.reference}`}
+                      />
+                    </>
+                  ) : (
+                    variable.value
+                  )}
                 </span>
               </li>
             )),
@@ -52,14 +67,27 @@ export const StackFrameNodeComponent = (props: NodeProps<StackFrameNode>) => {
 export const HeapVariableNodeCompenent = (props: NodeProps<HeapVariableNode>) => {
   return (
     <BaseNode>
+      <Handle type="target" position={Position.Left} id="in" />
       <BaseNodeHeader>{props.data.type}</BaseNodeHeader>
       <ul>
         {props.data.fields?.map((variable) => (
-          <li className="text-sm" key={variable.name}>
+          <li className="relative text-sm" key={variable.name}>
             {variable.name}
             <span className="text-xs opacity-20">
               {" "}
-              {isHeapVariable(variable) ? variable.address : variable.value}
+              {isHeapVariable(variable) ? (
+                <>
+                  {variable.address}
+                  <Handle
+                    className="absolute right-0 -mr-3"
+                    type="source"
+                    position={Position.Right}
+                    id={`out-${variable.name}-${variable.reference}`}
+                  />
+                </>
+              ) : (
+                variable.value
+              )}
             </span>
           </li>
         ))}
@@ -73,10 +101,8 @@ const nodeTypes = {
   heapVariable: HeapVariableNodeCompenent,
 };
 
-const isStackVariable = (variable: Variable) => variable.reference == 0 && variable.parent != null;
+const isStackVariable = (variable: Variable) => variable.reference == 0;
 const isHeapVariable = (variable: Variable) => !isStackVariable(variable);
-
-let id = 0;
 
 const Visualizer = ({
   thread,
@@ -87,20 +113,64 @@ const Visualizer = ({
 }) => {
   const [theme, toggleTheme] = useTheme();
 
-  const nodes: Node[] = thread.stack_frames.map((stackFrame, i) => ({
-    id: String(++id),
-    position: { x: 0, y: 200 * i },
-    type: "stackFrame",
-    data: stackFrame,
-  }));
+  const nodes: Node[] = [
+    {
+      id: "stackGroup",
+      type: "group",
+      position: { x: 0, y: 0 },
+      style: { width: 256 + 64, height: 600 },
+      data: {},
+    },
+  ];
+  const edges: Edge[] = [];
 
-  const heapNodes: Node[] = heapVariables.map((variable, j) => ({
-    id: String(++id),
-    position: { x: 250, y: 100 * j },
-    type: "heapVariable",
-    data: variable,
-  }));
+  const stackFrameNodes: Node[] = thread.stack_frames.map((stackFrame, i) => {
+    const stackFrameId = `stackframe-${stackFrame.id}`;
 
+    for (const refVar of stackFrame.scopes
+      .flatMap((scope) => scope.variables)
+      .filter((variable) => variable.reference != 0)) {
+      edges.push({
+        id: `${stackFrameId}-${refVar.reference}`,
+        source: stackFrameId,
+        sourceHandle: `out-${refVar.name}-${refVar.reference}`,
+        target: `ref-${refVar.reference}`,
+        targetHandle: "in",
+      });
+    }
+
+    return {
+      id: stackFrameId,
+      parentId: "stackGroup",
+      position: { x: 32, y: 32 + 172 * i },
+      type: "stackFrame",
+      data: stackFrame,
+      style: { width: 256 },
+    };
+  });
+
+  const heapNodes: Node[] = heapVariables.map((variable, j) => {
+    const referenceId = `ref-${variable.reference}`;
+
+    for (const refVar of variable.fields.filter((variable) => variable.reference != 0)) {
+      edges.push({
+        id: `${referenceId}-${refVar.reference}`,
+        source: referenceId,
+        sourceHandle: `out-${refVar.name}-${refVar.reference}`,
+        target: `ref-${refVar.reference}`,
+        targetHandle: "in",
+      });
+    }
+
+    return {
+      id: referenceId,
+      position: { x: 400, y: 128 * j },
+      type: "heapVariable",
+      data: variable,
+    };
+  });
+
+  nodes.push(...stackFrameNodes);
   nodes.push(...heapNodes);
 
   return (
@@ -108,6 +178,7 @@ const Visualizer = ({
       <ReactFlow
         proOptions={{ hideAttribution: true }}
         nodes={nodes}
+        edges={edges}
         nodeTypes={nodeTypes}
         colorMode={theme}
         fitView
@@ -117,13 +188,28 @@ const Visualizer = ({
           <ControlButton onClick={toggleTheme}>T</ControlButton>
         </Controls>
       </ReactFlow>
+
       <details className="font-mono px-4 max-h-screen bg-black/80 absolute top-0 left-0 text-white overflow-y-auto">
         <summary>Debug</summary>
-        <h1>Thread</h1>
-        <pre>{JSON.stringify(thread, null, 2)}</pre>
+        <details>
+          <summary>Thread</summary>
+          <pre>{JSON.stringify(thread, null, 2)}</pre>
+        </details>
 
-        <h1 className="mt-8">Heap</h1>
-        <pre>{JSON.stringify(heapVariables, null, 2)}</pre>
+        <details>
+          <summary>Heap</summary>
+          <pre>{JSON.stringify(heapVariables, null, 2)}</pre>
+        </details>
+
+        <details open>
+          <summary>Nodes</summary>
+          <pre>{JSON.stringify(nodes, null, 2)}</pre>
+        </details>
+
+        <details open>
+          <summary>Edges</summary>
+          <pre>{JSON.stringify(edges, null, 2)}</pre>
+        </details>
       </details>
     </>
   );

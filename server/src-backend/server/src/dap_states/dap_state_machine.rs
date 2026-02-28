@@ -100,7 +100,6 @@ impl From<&dap_types::types::StackFrame> for StackFrameInfo {
 
 #[derive(Serialize, Clone, Debug, Default)]
 pub struct StackFrameInfo {
-    #[serde(skip)]
     pub id: i64,
     pub file: String,
     pub line: i64,

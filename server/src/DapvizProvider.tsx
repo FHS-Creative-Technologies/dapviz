@@ -24,6 +24,7 @@ export type Scope = {
 };
 
 export type StackFrame = {
+  id: number;
   file: string;
   line: number;
   function: string;
