@@ -181,6 +181,7 @@ const Visualizer = ({
         edges={edges}
         nodeTypes={nodeTypes}
         colorMode={theme}
+        nodesConnectable={false}
         fitView
       >
         <Background variant={BackgroundVariant.Dots} />
