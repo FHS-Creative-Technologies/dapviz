@@ -65,13 +65,23 @@ impl DapStateHandler for QueryStackTraces {
                     .enumerate()
                     .find(|(_, thread)| thread.stack_frames.is_none())
                     .map_or(QueryScopes.into(), |(i, thread)| {
-                        thread.stack_frames = Some(
-                            stack_trace
-                                .stack_frames
-                                .iter()
-                                .map(StackFrameInfo::from)
-                                .collect(),
-                        );
+                        let stack_frames: Vec<_> = stack_trace
+                            .stack_frames
+                            .iter()
+                            .map(StackFrameInfo::from)
+                            .collect();
+
+                        for stack_frame in &stack_frames {
+                            context
+                                .source_files
+                                .entry(stack_frame.file.clone())
+                                .or_insert_with_key(|key| {
+                                    std::fs::read_to_string(key)
+                                        .expect("debug adapter should return valid file path for stack frame")
+                                });
+                        }
+
+                        thread.stack_frames = Some(stack_frames);
 
                         if i == thread_count - 1 {
                             // if we just filled the last thread, continue with querying scopes

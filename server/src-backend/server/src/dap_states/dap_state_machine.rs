@@ -4,7 +4,10 @@ use dap_types::types::{ProtocolMessage, ProtocolMessageType, RequestArguments};
 
 use serde::Serialize;
 
-use crate::{debug_adapters::DebugAdapter, user_request::UserRequest};
+use crate::{
+    dap_states::visualization_state::VisualizationState, debug_adapters::DebugAdapter,
+    user_request::UserRequest,
+};
 
 use super::{
     dap_state::{DapState, DapStateHandler},
@@ -116,15 +119,17 @@ pub struct ThreadInfo {
 
 impl ProgramState {
     pub fn from_threads(threads: &[dap_types::types::Thread]) -> Self {
+        let threads = threads
+            .iter()
+            .map(|thread| ThreadInfo {
+                id: thread.id,
+                name: thread.name.clone(),
+                stack_frames: None,
+            })
+            .collect::<Vec<_>>();
+
         Self {
-            threads: threads
-                .iter()
-                .map(|thread| ThreadInfo {
-                    id: thread.id,
-                    name: thread.name.clone(),
-                    stack_frames: None,
-                })
-                .collect(),
+            threads,
             ..Default::default()
         }
     }
@@ -185,6 +190,8 @@ pub struct ProgramState {
 pub struct DapContext {
     pub debug_adapter: DebugAdapter,
     pub executable_path: String,
+    pub active_thread: Option<i64>,
+    pub source_files: HashMap<String, String>,
     pub program_state: Option<ProgramState>,
     pub variable_resolver: VariableResolver,
 }
@@ -204,6 +211,8 @@ impl DapStateMachine {
             context: DapContext {
                 debug_adapter,
                 executable_path,
+                active_thread: None,
+                source_files: HashMap::new(),
                 program_state: None,
                 variable_resolver: VariableResolver::new(),
             },
@@ -212,8 +221,8 @@ impl DapStateMachine {
         }
     }
 
-    pub fn current_program_state(&self) -> Option<&ProgramState> {
-        self.context.program_state.as_ref()
+    pub fn build_visualization_state(&self) -> VisualizationState {
+        VisualizationState::from(&self.context)
     }
 
     pub fn program_terminated(&self) -> bool {

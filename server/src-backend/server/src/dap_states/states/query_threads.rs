@@ -25,7 +25,10 @@ impl DapStateHandler for QueryThreads {
     ) -> Option<DapState> {
         match response {
             ResponseBody::threads(threads) => {
-                context.program_state = Some(ProgramState::from_threads(&threads.threads));
+                let program_state = ProgramState::from_threads(&threads.threads);
+                context.active_thread =
+                    (program_state.threads.len() == 1).then(|| program_state.threads[0].id);
+                context.program_state = Some(program_state);
                 context.variable_resolver = VariableResolver::new();
 
                 Some(QueryStackTraces.into())

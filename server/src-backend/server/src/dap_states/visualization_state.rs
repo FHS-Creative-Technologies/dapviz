@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use itertools::Itertools;
 use serde::Serialize;
 
-use crate::dap_states::dap_state_machine::{ProgramState, ThreadInfo, VariableInfoData};
+use crate::dap_states::dap_state_machine::{DapContext, ThreadInfo, VariableInfoData};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct HeapVariableInfo {
@@ -22,13 +22,19 @@ pub struct HeapVariableInfo {
 pub struct VisualizationState {
     threads: Vec<ThreadInfo>,
     heap_variables: Vec<HeapVariableInfo>,
+    current_source_file: Option<(String, String, i64)>,
 }
 
-impl From<&ProgramState> for VisualizationState {
-    fn from(value: &ProgramState) -> Self {
+impl From<&DapContext> for VisualizationState {
+    fn from(context: &DapContext) -> Self {
         let mut visualization_state = VisualizationState {
-            threads: value.threads.clone(),
+            threads: context
+                .program_state
+                .as_ref()
+                .map(|state| state.threads.clone())
+                .unwrap_or_else(|| Vec::new()),
             heap_variables: Vec::new(),
+            current_source_file: None,
         };
 
         let mut complete_heap_variables = HashSet::<i64>::new();
@@ -94,6 +100,32 @@ impl From<&ProgramState> for VisualizationState {
                         .heap_variables
                         .append(&mut heap_variables);
                 }
+            }
+        }
+
+        if let Some(active_thread_id) = context.active_thread {
+            let current_stack_frames = visualization_state
+                .threads
+                .iter()
+                .find_map(|thread| {
+                    (thread.id == active_thread_id).then(|| thread.stack_frames.as_ref())
+                })
+                .flatten();
+
+            if let Some(stack_frames) = current_stack_frames {
+                let stack_frame = stack_frames
+                    .last()
+                    .expect("thread must have one stack frame");
+
+                let file_name = stack_frame.file.clone();
+                let file_contents = context
+                    .source_files
+                    .get(&file_name)
+                    .expect("file should have been loaded to context");
+                let line = stack_frame.line;
+
+                visualization_state.current_source_file =
+                    Some((file_name, file_contents.clone(), line))
             }
         }
 

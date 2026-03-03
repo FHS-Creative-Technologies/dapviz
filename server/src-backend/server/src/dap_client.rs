@@ -198,13 +198,11 @@ impl DapClient {
                 state_machine = state_machine.process_dap_messages(&process.receive().await?);
             }
 
-            if let Some(program_state) = state_machine.current_program_state() {
-                let viz = VisualizationState::from(program_state);
-                tracing::debug!(visualization = ?viz, internal = ?program_state, "Sending state to connected clients");
+            let viz = state_machine.build_visualization_state();
+            tracing::debug!(visualization = ?viz, "Sending state to connected clients");
 
-                if self.visualization_state_sender.send(viz).is_err() {
-                    break;
-                }
+            if self.visualization_state_sender.send(viz).is_err() {
+                break;
             }
 
             tokio::select! {

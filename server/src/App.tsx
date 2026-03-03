@@ -22,6 +22,7 @@ const DapvizApp = () => {
       <Visualizer
         thread={visualizationState.threads[currentThread]}
         heapVariables={visualizationState.heap_variables}
+        currentSourceFile={visualizationState.current_source_file}
       />
       <Controls currentThread={currentThread} setCurrentThread={setCurrentThread} />
     </>

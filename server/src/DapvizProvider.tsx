@@ -40,6 +40,7 @@ export type ThreadInfo = {
 export type VisualizationState = {
   threads: [ThreadInfo];
   heap_variables: [HeapVariable];
+  current_source_file: [string, string, number];
 };
 
 type DapvizRequestFunction = (request: DapvizRequest, threadId: number) => void;

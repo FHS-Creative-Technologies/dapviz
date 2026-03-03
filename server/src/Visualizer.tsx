@@ -107,9 +107,11 @@ const isHeapVariable = (variable: Variable) => !isStackVariable(variable);
 const Visualizer = ({
   thread,
   heapVariables,
+  currentSourceFile,
 }: {
   thread: ThreadInfo;
   heapVariables: [HeapVariable];
+  currentSourceFile: [string, string, number];
 }) => {
   const [theme, toggleTheme] = useTheme();
 
@@ -200,6 +202,11 @@ const Visualizer = ({
         <details>
           <summary>Heap</summary>
           <pre>{JSON.stringify(heapVariables, null, 2)}</pre>
+        </details>
+
+        <details open>
+          <summary>Current File</summary>
+          <pre>{JSON.stringify(currentSourceFile, null, 2)}</pre>
         </details>
 
         <details open>

@@ -24,11 +24,14 @@ impl DapStateHandler for StepOut {
 
     fn handle_response(
         &mut self,
-        _context: &mut DapContext,
+        context: &mut DapContext,
         response: &dap_types::types::ResponseBody,
     ) -> Option<DapState> {
         match response {
-            dap_types::types::ResponseBody::stepOut(..) => Some(WaitForBreakpointHit.into()),
+            dap_types::types::ResponseBody::stepOut(..) => {
+                context.active_thread = Some(self.0);
+                Some(WaitForBreakpointHit.into())
+            }
             _ => {
                 tracing::error!("Unexpected response: {:?}", response);
                 None
