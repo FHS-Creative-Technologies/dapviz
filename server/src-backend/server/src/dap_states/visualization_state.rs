@@ -26,11 +26,8 @@ pub struct VisualizationState {
 
 impl From<&ProgramState> for VisualizationState {
     fn from(value: &ProgramState) -> Self {
-        let mut threads = value.threads.clone();
-        threads.reverse();
-
         let mut visualization_state = VisualizationState {
-            threads,
+            threads: value.threads.clone(),
             heap_variables: Vec::new(),
         };
 
@@ -40,6 +37,9 @@ impl From<&ProgramState> for VisualizationState {
             let Some(stack_frames) = thread.stack_frames.as_mut() else {
                 continue;
             };
+
+            // reverse stack frames so visualization has an easier time
+            stack_frames.reverse();
 
             for stack_frame in stack_frames.iter_mut() {
                 let Some(scopes) = stack_frame.scopes.as_mut() else {
