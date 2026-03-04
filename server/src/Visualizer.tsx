@@ -9,12 +9,14 @@ import {
   NodeProps,
   Position,
   ReactFlow,
+  useEdgesState,
+  useNodesState,
 } from "@xyflow/react";
 import { HeapVariable, StackFrame, ThreadInfo, Variable } from "./DapvizProvider";
 
 import "@xyflow/react/dist/style.css";
 import { useTheme } from "./ThemeProvider";
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, useEffect } from "react";
 
 type StackFrameNode = Node<StackFrame, "stackFrame">;
 type HeapVariableNode = Node<HeapVariable, "heapVariable">;
@@ -104,17 +106,7 @@ const nodeTypes = {
 const isStackVariable = (variable: Variable) => variable.reference == 0;
 const isHeapVariable = (variable: Variable) => !isStackVariable(variable);
 
-const Visualizer = ({
-  thread,
-  heapVariables,
-  currentSourceFile,
-}: {
-  thread: ThreadInfo;
-  heapVariables: [HeapVariable];
-  currentSourceFile: [string, string, number];
-}) => {
-  const [theme, toggleTheme] = useTheme();
-
+const buildGraph = (thread: ThreadInfo, heapVariables: [HeapVariable]): [Node[], Edge[]] => {
   const nodes: Node[] = [
     {
       id: "stackGroup",
@@ -133,7 +125,7 @@ const Visualizer = ({
       .flatMap((scope) => scope.variables)
       .filter((variable) => variable.reference != 0)) {
       edges.push({
-        id: `${stackFrameId}-${refVar.reference}`,
+        id: `${stackFrameId}-${refVar.name}-${refVar.reference}`,
         source: stackFrameId,
         sourceHandle: `out-${refVar.name}-${refVar.reference}`,
         target: `ref-${refVar.reference}`,
@@ -144,6 +136,7 @@ const Visualizer = ({
     return {
       id: stackFrameId,
       parentId: "stackGroup",
+      extent: "parent",
       position: { x: 32, y: 32 + 172 * i },
       type: "stackFrame",
       data: stackFrame,
@@ -156,7 +149,7 @@ const Visualizer = ({
 
     for (const refVar of variable.fields.filter((variable) => variable.reference != 0)) {
       edges.push({
-        id: `${referenceId}-${refVar.reference}`,
+        id: `${referenceId}-${refVar.name}-${refVar.reference}`,
         source: referenceId,
         sourceHandle: `out-${refVar.name}-${refVar.reference}`,
         target: `ref-${refVar.reference}`,
@@ -175,16 +168,40 @@ const Visualizer = ({
   nodes.push(...stackFrameNodes);
   nodes.push(...heapNodes);
 
+  return [nodes, edges];
+};
+
+const Visualizer = ({
+  thread,
+  heapVariables,
+  currentSourceFile,
+}: {
+  thread: ThreadInfo;
+  heapVariables: [HeapVariable];
+  currentSourceFile: [string, string, number];
+}) => {
+  const [theme, toggleTheme] = useTheme();
+
+  const [nodes, setNodes, onNodesChange] = useNodesState([] as Node[]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([] as Edge[]);
+
+  useEffect(() => {
+    const [newNodes, newEdges] = buildGraph(thread, heapVariables);
+    setNodes(newNodes);
+    setEdges(newEdges);
+  }, [thread, heapVariables, setNodes, setEdges]);
+
   return (
     <>
       <ReactFlow
         proOptions={{ hideAttribution: true }}
         nodes={nodes}
         edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
         colorMode={theme}
         nodesConnectable={false}
-        fitView
       >
         <Background variant={BackgroundVariant.Dots} />
         <Controls>
