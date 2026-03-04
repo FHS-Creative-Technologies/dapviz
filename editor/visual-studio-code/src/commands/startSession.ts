@@ -124,7 +124,7 @@ export default async (context: vscode.ExtensionContext) => {
     ws.on("message", async (data) => {
         const json = JSON.parse(data.toString());
 
-        const stackFrames = json.threads[0].stack_frames;
+        const stackFrames = json.threads[0]?.stack_frames;
 
         if (!stackFrames) {
             return;
