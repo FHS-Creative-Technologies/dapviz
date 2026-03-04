@@ -13,8 +13,17 @@ const highlightDecoration = vscode.window.createTextEditorDecorationType({
 });
 
 const highlightLine = async (filePath: string, line: number) => {
-    const document = await vscode.workspace.openTextDocument(filePath);
-    const editor = await vscode.window.showTextDocument(document, vscode.ViewColumn.Active);
+    const targetFile = vscode.Uri.file(filePath);
+
+    // Find an existing editor for this file instead of opening a new one
+    let editor = vscode.window.visibleTextEditors.find(
+        e => e.document.uri.fsPath === targetFile.fsPath
+    );
+
+    if (!editor) {
+        const document = await vscode.workspace.openTextDocument(targetFile);
+        editor = await vscode.window.showTextDocument(document, vscode.ViewColumn.Active);
+    }
 
     if (!editor) {
         vscode.window.showErrorMessage(`Could not open file: ${filePath}`);
@@ -23,14 +32,31 @@ const highlightLine = async (filePath: string, line: number) => {
 
     // vscode.Range is zero-based, lsp is one-based
     line = line - 1;
+    const range = new vscode.Range(line, 0, line, editor.document.lineAt(line).text.length);
 
-    const range = new vscode.Range(line, 0, line, document.lineAt(line).text.length);
+    const applyDecoration = () => {
+        const currentEditor = vscode.window.visibleTextEditors.find(
+            e => e.document.uri.fsPath === targetFile.fsPath
+        );
+        if (currentEditor) {
+            currentEditor.setDecorations(highlightDecoration, [range]);
+        }
+    };
 
-    editor.setDecorations(highlightDecoration, [range]);
+    applyDecoration();
     editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
 
+    // Reapply decoration whenever the active editor changes (e.g. switching tabs)
+    const listener = vscode.window.onDidChangeVisibleTextEditors(() => applyDecoration());
+
     return () => {
-        editor.setDecorations(highlightDecoration, []);
+        listener.dispose();
+        const currentEditor = vscode.window.visibleTextEditors.find(
+            e => e.document.uri.fsPath === targetFile.fsPath
+        );
+        if (currentEditor) {
+            currentEditor.setDecorations(highlightDecoration, []);
+        }
     };
 };
 
@@ -92,13 +118,19 @@ export default async (context: vscode.ExtensionContext) => {
     let clearPreviousHighlight: (() => void) | null = null;
 
     ws.on("error", (e) => {
-        vscode.window.showErrorMessage("Could not connect to dapviz:", JSON.stringify(e));
+        vscode.window.showErrorMessage("dapviz error:", JSON.stringify(e));
     });
 
     ws.on("message", async (data) => {
         const json = JSON.parse(data.toString());
 
-        const currentStackFrame = json.threads[0]?.stack_frames[0];
+        const stackFrames = json.threads[0].stack_frames;
+
+        if (!stackFrames) {
+            return;
+        }
+
+        const currentStackFrame = stackFrames[stackFrames.length - 1];
 
         if (currentStackFrame) {
             clearPreviousHighlight?.();
