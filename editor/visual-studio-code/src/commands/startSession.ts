@@ -68,20 +68,21 @@ export default async (context: vscode.ExtensionContext) => {
 
     const dapvizPath = await ensureDapvizInstall(context);
 
+    const debugAdapter = await vscode.window.showQuickPick(await getSupportedDebugAdapters(dapvizPath), {
+        placeHolder: "Select the debug adapter use"
+    });
+
+    if (!debugAdapter) {
+        return;
+    }
+
     const uri = await vscode.window.showOpenDialog({
+        defaultUri: vscode.Uri.file("./bin/Debug/"),
         canSelectMany: false,
         openLabel: "Debug executable",
     });
 
     const executablePath = uri?.[0].fsPath;
-
-    if (!executablePath) {
-        return;
-    }
-
-    const debugAdapter = await vscode.window.showQuickPick(await getSupportedDebugAdapters(dapvizPath), {
-        placeHolder: "Select the debug adapter use"
-    });
 
     if (!executablePath) {
         return;
