@@ -6,7 +6,7 @@ const Button = ({ className, ...props }: ComponentProps<"button">) => (
   <button
     className={clsx(
       className,
-      "cursor-pointer bg-neutral-800 px-6 py-2 first:rounded-l last:rounded-r font-sans",
+      "text-sm cursor-pointer bg-neutral-800 px-3 py-1 first:rounded-l last:rounded-r font-sans",
     )}
     {...props}
   />
@@ -34,7 +34,7 @@ const Controls = ({
       <select
         defaultValue={currentThread}
         onChange={(e) => setCurrentThread(+e.target.value)}
-        className="pointer-events-auto cursor-pointer bg-neutral-800 px-6 py-2 rounded font-sans"
+        className="text-sm pointer-events-auto cursor-pointer bg-neutral-800 px-3 py-1 rounded font-sans"
       >
         {programState.threads.map((thread, i) => (
           <option key={i} value={i}>

@@ -192,7 +192,7 @@ const Visualizer = ({
         </Controls>
       </ReactFlow>
 
-      <details className="font-mono px-4 max-h-screen bg-black/80 absolute top-0 left-0 text-white overflow-y-auto">
+      <details className="text-xs font-mono px-4 max-h-screen bg-black/80 absolute top-0 left-0 text-white overflow-y-auto">
         <summary>Debug</summary>
         <details>
           <summary>Thread</summary>
@@ -204,17 +204,17 @@ const Visualizer = ({
           <pre>{JSON.stringify(heapVariables, null, 2)}</pre>
         </details>
 
-        <details open>
+        <details>
           <summary>Current File</summary>
           <pre>{JSON.stringify(currentSourceFile, null, 2)}</pre>
         </details>
 
-        <details open>
+        <details>
           <summary>Nodes</summary>
           <pre>{JSON.stringify(nodes, null, 2)}</pre>
         </details>
 
-        <details open>
+        <details>
           <summary>Edges</summary>
           <pre>{JSON.stringify(edges, null, 2)}</pre>
         </details>
