@@ -4,6 +4,7 @@
     {
         new VariablesTest().Run();
         new HeapObjectsTest().Run();
+        new ArraysTest().Run();
         new DataStructuresTest().Run();
     }
 }
@@ -74,6 +75,28 @@ public class HeapObjectsTest
         var undoer = new VectorScaler(doubler.Apply(), 0.5f);
         undoer.Apply();
         halver.Apply();
+    }
+}
+
+public class ArraysTest {
+    public void Run() {
+        var numbers = new float[]{ 1, 2, 3, 4, 5 };
+        var strings = new string[]{ "i", "am", "testing", "the", "visualization" };
+        var ref2 = numbers;
+
+        ref2[3] = 6;
+        ref2[0] = 4;
+
+        strings[2] = "running";
+
+        numbers[2] = 7;
+        numbers[1] = 5;
+
+        Reverse(numbers);
+    }
+
+    public void Reverse(float[] numbers) {
+        Array.Reverse(numbers);
     }
 }
 
