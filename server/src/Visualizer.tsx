@@ -201,7 +201,7 @@ const Visualizer = ({
 
     setNodes(newNodes);
     setEdges(newEdges);
-  }, [thread, heapVariables, setNodes, setEdges]);
+  }, [thread, heapVariables, currentSourceFile, setNodes, setEdges]);
 
   return (
     <>
