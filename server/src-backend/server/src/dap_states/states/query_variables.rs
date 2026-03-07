@@ -7,8 +7,10 @@ use crate::dap_states::{
 
 use super::wait_for_user_input::WaitForUserInput;
 
-#[derive(Debug)]
-pub struct QueryVariables;
+#[derive(Debug, Default)]
+pub struct QueryVariables {
+    depth: usize,
+}
 
 enum NextRef<'a> {
     Scope(&'a ScopeInfo),
@@ -148,6 +150,16 @@ impl DapStateHandler for QueryVariables {
                     &mut response
                         .variables
                         .iter()
+                        .filter(|variable| {
+                            variable
+                                .type_
+                                .as_ref()
+                                // TODO: more intelligent filtering dependent on language
+                                .map(|type_| {
+                                    type_ != "System.Reflection.TargetParameterCountException"
+                                })
+                                .unwrap_or(true)
+                        })
                         .map(|variable| resolver.resolve(variable).with_parent(variables_reference))
                         .collect::<Vec<_>>(),
                 );
@@ -158,7 +170,16 @@ impl DapStateHandler for QueryVariables {
 
         match next_requested {
             None => Some(WaitForUserInput.into()),
-            Some(..) => Some(QueryVariables.into()),
+            Some(..) if self.depth > 10 => {
+                tracing::warn!("Recursive variable query depth limit reached");
+                Some(WaitForUserInput.into())
+            }
+            Some(..) => Some(
+                QueryVariables {
+                    depth: self.depth + 1,
+                }
+                .into(),
+            ),
         }
     }
 }

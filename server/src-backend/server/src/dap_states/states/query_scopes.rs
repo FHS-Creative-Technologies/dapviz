@@ -66,7 +66,7 @@ impl DapStateHandler for QueryScopes {
 
         match response {
             ResponseBody::scopes(scopes) => Some(next_empty_stack_frame.map_or(
-                QueryVariables.into(),
+                QueryVariables::default().into(),
                 |(index, stack_frame)| {
                     stack_frame.scopes = scopes
                         .scopes
@@ -76,7 +76,7 @@ impl DapStateHandler for QueryScopes {
                         .into();
 
                     if index == stack_frame_count - 1 {
-                        QueryVariables.into()
+                        QueryVariables::default().into()
                     } else {
                         QueryScopes.into()
                     }
