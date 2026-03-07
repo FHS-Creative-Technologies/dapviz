@@ -33,37 +33,39 @@ const BaseNodeHeader = ({ children }: PropsWithChildren) => (
   <h2 className="font-medium italic">{children}</h2>
 );
 
+const VariableListComponent = ({ variables }: { variables: Variable[] }) => {
+  return (
+    <ul>
+      {variables.map((variable) => (
+        <li className="relative text-sm" key={variable.name}>
+          {variable.name}
+          <span className="text-xs opacity-20">
+            {" "}
+            {isHeapVariable(variable) ? (
+              <>
+                {variable.address}
+                <Handle
+                  className="absolute right-0 -mr-3"
+                  type="source"
+                  position={Position.Right}
+                  id={`out-${variable.name}-${variable.reference}`}
+                />
+              </>
+            ) : (
+              variable.value
+            )}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+};
+
 export const StackFrameNodeComponent = (props: NodeProps<StackFrameNode>) => {
   return (
     <BaseNode>
       <BaseNodeHeader>{props.data.function}</BaseNodeHeader>
-      <ul>
-        {props.data.scopes.flatMap((scope) =>
-          scope.variables
-            .filter((variable) => variable.parent == null)
-            .map((variable) => (
-              <li className="relative text-sm" key={variable.name}>
-                {variable.name}
-                <span className="text-xs opacity-20">
-                  {" "}
-                  {isHeapVariable(variable) ? (
-                    <>
-                      {variable.address}
-                      <Handle
-                        className="absolute right-0 -mr-3"
-                        type="source"
-                        position={Position.Right}
-                        id={`out-${variable.name}-${variable.reference}`}
-                      />
-                    </>
-                  ) : (
-                    variable.value
-                  )}
-                </span>
-              </li>
-            )),
-        )}
-      </ul>
+      <VariableListComponent variables={props.data.scopes.flatMap((scope) => scope.variables)} />
     </BaseNode>
   );
 };
@@ -73,29 +75,7 @@ export const HeapVariableNodeCompenent = (props: NodeProps<HeapVariableNode>) =>
     <BaseNode>
       <Handle type="target" position={Position.Left} id="in" />
       <BaseNodeHeader>{props.data.type}</BaseNodeHeader>
-      <ul>
-        {props.data.fields?.map((variable) => (
-          <li className="relative text-sm" key={variable.name}>
-            {variable.name}
-            <span className="text-xs opacity-20">
-              {" "}
-              {isHeapVariable(variable) ? (
-                <>
-                  {variable.address}
-                  <Handle
-                    className="absolute right-0 -mr-3"
-                    type="source"
-                    position={Position.Right}
-                    id={`out-${variable.name}-${variable.reference}`}
-                  />
-                </>
-              ) : (
-                variable.value
-              )}
-            </span>
-          </li>
-        ))}
-      </ul>
+      <VariableListComponent variables={props.data.fields} />
     </BaseNode>
   );
 };
