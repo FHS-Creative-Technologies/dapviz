@@ -50,6 +50,7 @@ impl From<&DapContext> for VisualizationState {
 
                 for scope in scopes {
                     let Some(variables) = scope.variables.as_mut() else {
+                        scope.variables = Some(Vec::new());
                         continue;
                     };
 
