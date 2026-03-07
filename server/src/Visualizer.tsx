@@ -35,14 +35,16 @@ const BaseNodeHeader = ({ children }: PropsWithChildren) => (
 
 const VariableListComponent = ({ variables }: { variables: Variable[] }) => {
   return (
-    <ul>
+    <ul className="mt-2">
       {variables.map((variable) => (
-        <li className="relative text-sm" key={variable.name}>
-          {variable.name}
-          <span className="text-xs opacity-20">
-            {" "}
+        <li
+          className="relative text-sm flex flex-row justify-between items-center"
+          key={variable.name}
+        >
+          <span>{variable.name}</span>
+          <span className="font-mono">
             {isHeapVariable(variable) ? (
-              <>
+              <span className="font-mono ml-1 text-xs text-neutral-300 dark:text-neutral-600">
                 {variable.address}
                 <Handle
                   className="absolute right-0 -mr-3"
@@ -50,7 +52,7 @@ const VariableListComponent = ({ variables }: { variables: Variable[] }) => {
                   position={Position.Right}
                   id={`out-${variable.name}-${variable.reference}`}
                 />
-              </>
+              </span>
             ) : (
               variable.value
             )}
