@@ -17,9 +17,11 @@ import { HeapVariable, StackFrame, ThreadInfo, Variable } from "./DapvizProvider
 import "@xyflow/react/dist/style.css";
 import { useTheme } from "./ThemeProvider";
 import { PropsWithChildren, useEffect } from "react";
+import clsx from "clsx";
 
 type StackFrameNode = Node<StackFrame, "stackFrame">;
 type HeapVariableNode = Node<HeapVariable, "heapVariable">;
+type SourceNode = Node<{ source: [string, string, number] }, "source">;
 
 const BaseNode = ({ children }: PropsWithChildren) => (
   <div className="bg-white text-black dark:bg-neutral-800 dark:text-white p-3 drop-shadow-md dark:drop-shadow-none rounded-lg flex flex-col">
@@ -98,9 +100,31 @@ export const HeapVariableNodeCompenent = (props: NodeProps<HeapVariableNode>) =>
   );
 };
 
+export const SourceNodeComponent = (props: NodeProps<SourceNode>) => {
+  const [fileName, sourceCode, currentLine] = props.data.source;
+  const lines = sourceCode.split(/\r?\n/);
+  const maxDigits = Math.ceil(Math.log10(lines.length + 1));
+
+  return (
+    <BaseNode>
+      <BaseNodeHeader>
+        {fileName}:{currentLine}
+      </BaseNodeHeader>
+      <div className="font-mono text-xs mt-4">
+        {lines.map((line, i) => (
+          <pre className={clsx(i + 1 == currentLine && "bg-yellow/30")}>
+            <span className="mr-2">{String(i + 1).padStart(maxDigits)}</span> {line}
+          </pre>
+        ))}
+      </div>
+    </BaseNode>
+  );
+};
+
 const nodeTypes = {
   stackFrame: StackFrameNodeComponent,
   heapVariable: HeapVariableNodeCompenent,
+  source: SourceNodeComponent,
 };
 
 const isStackVariable = (variable: Variable) => variable.reference == 0;
@@ -187,6 +211,14 @@ const Visualizer = ({
 
   useEffect(() => {
     const [newNodes, newEdges] = buildGraph(thread, heapVariables);
+
+    newNodes.push({
+      id: "source",
+      type: "source",
+      position: { x: -800, y: 0 },
+      data: { source: currentSourceFile },
+    });
+
     setNodes(newNodes);
     setEdges(newEdges);
   }, [thread, heapVariables, setNodes, setEdges]);
