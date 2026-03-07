@@ -17,7 +17,7 @@ export type Variable = {
   type: string;
 };
 
-export type HeapVariable = Omit<Variable, "parent"> & { fields: [Variable] };
+export type HeapVariable = Omit<Variable, "parent"> & { fields: Variable[] };
 
 export type Scope = {
   variables: [Variable];
