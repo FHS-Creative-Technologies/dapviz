@@ -272,33 +272,38 @@ const Visualizer = ({
         </Controls>
       </ReactFlow>
 
-      <details className="text-xs font-mono px-4 max-h-screen bg-black/80 absolute top-0 left-0 text-white overflow-y-auto">
-        <summary>Debug</summary>
-        <details>
-          <summary>Thread</summary>
-          <pre>{JSON.stringify(thread, null, 2)}</pre>
-        </details>
+      {
+        (import.meta.env.DEV) &&
+        <>
+          <details className="text-xs font-mono px-4 max-h-screen bg-black/80 absolute top-0 left-0 text-white overflow-y-auto">
+            <summary>Debug</summary>
+            <details>
+              <summary>Thread</summary>
+              <pre>{JSON.stringify(thread, null, 2)}</pre>
+            </details>
 
-        <details>
-          <summary>Heap</summary>
-          <pre>{JSON.stringify(heapVariables, null, 2)}</pre>
-        </details>
+            <details>
+              <summary>Heap</summary>
+              <pre>{JSON.stringify(heapVariables, null, 2)}</pre>
+            </details>
 
-        <details>
-          <summary>Current File</summary>
-          <pre>{JSON.stringify(currentSourceFile, null, 2)}</pre>
-        </details>
+            <details>
+              <summary>Current File</summary>
+              <pre>{JSON.stringify(currentSourceFile, null, 2)}</pre>
+            </details>
 
-        <details>
-          <summary>Nodes</summary>
-          <pre>{JSON.stringify(nodes, null, 2)}</pre>
-        </details>
+            <details>
+              <summary>Nodes</summary>
+              <pre>{JSON.stringify(nodes, null, 2)}</pre>
+            </details>
 
-        <details>
-          <summary>Edges</summary>
-          <pre>{JSON.stringify(edges, null, 2)}</pre>
-        </details>
-      </details>
+            <details>
+              <summary>Edges</summary>
+              <pre>{JSON.stringify(edges, null, 2)}</pre>
+            </details>
+          </details>
+        </>
+      }
     </>
   );
 };
