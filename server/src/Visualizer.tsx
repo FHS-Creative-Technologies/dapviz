@@ -19,6 +19,8 @@ import { useTheme } from "./ThemeProvider";
 import { PropsWithChildren, useEffect } from "react";
 import clsx from "clsx";
 
+import dagre from "@dagrejs/dagre"
+
 type StackFrameNode = Node<StackFrame, "stackFrame">;
 type HeapVariableNode = Node<HeapVariable, "heapVariable">;
 type SourceNode = Node<{ source: [string, string, number] }, "source">;
@@ -113,15 +115,7 @@ const isStackVariable = (variable: Variable) => variable.reference == 0;
 const isHeapVariable = (variable: Variable) => !isStackVariable(variable);
 
 const buildGraph = (thread: ThreadInfo, heapVariables: [HeapVariable]): [Node[], Edge[]] => {
-  const nodes: Node[] = [
-    {
-      id: "stackGroup",
-      type: "group",
-      position: { x: 0, y: 0 },
-      style: { width: 256 + 64, height: 600 },
-      data: {},
-    },
-  ];
+  const nodes: Node[] = [];
   const edges: Edge[] = [];
 
   const stackFrameNodes: Node[] = thread.stack_frames.map((stackFrame, i) => {
@@ -139,10 +133,9 @@ const buildGraph = (thread: ThreadInfo, heapVariables: [HeapVariable]): [Node[],
       });
     }
 
+    // TODO: calculate size so next can be positioned well
     return {
       id: stackFrameId,
-      parentId: "stackGroup",
-      extent: "parent",
       position: { x: 32, y: 32 + 172 * i },
       draggable: false,
       type: "stackFrame",
@@ -151,7 +144,7 @@ const buildGraph = (thread: ThreadInfo, heapVariables: [HeapVariable]): [Node[],
     };
   });
 
-  const heapNodes: Node[] = heapVariables.map((variable, j) => {
+  const heapNodes: Node[] = heapVariables.map(variable => {
     const referenceId = `ref-${variable.reference}`;
 
     for (const refVar of variable.fields.filter((variable) => variable.reference != 0)) {
@@ -166,14 +159,42 @@ const buildGraph = (thread: ThreadInfo, heapVariables: [HeapVariable]): [Node[],
 
     return {
       id: referenceId,
-      position: { x: 400, y: 128 * j },
+      position: { x: 0, y: 0 },
       type: "heapVariable",
       data: variable,
     };
   });
 
+  const dagreGraph = new dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
+  dagreGraph.setGraph({ rankdir: "LR", align: "UL" });
+
+  heapNodes.forEach((node) => {
+    // TODO: calculate size so layouting works well
+    dagreGraph.setNode(node.id, { width: 400, height: 300 });
+  });
+
+  edges.forEach((edge) => {
+    dagreGraph.setEdge(edge.source, edge.target);
+  });
+
+  dagre.layout(dagreGraph);
+
+  const layoutedHeapNodes = heapNodes.map((node) => {
+    const layoutedNode = dagreGraph.node(node.id);
+
+    return {
+      ...node,
+      // targetPosition: "left",
+      // sourcePosition: "right",
+      position: {
+        x: 200 + layoutedNode.x,
+        y: layoutedNode.y,
+      }
+    };
+  });
+
   nodes.push(...stackFrameNodes);
-  nodes.push(...heapNodes);
+  nodes.push(...layoutedHeapNodes);
 
   return [nodes, edges];
 };

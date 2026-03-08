@@ -18,6 +18,7 @@
     "lint:fix:rust": "cd src-backend && cargo fix"
   },
   "dependencies": {
+    "@dagrejs/dagre": "^2.0.4",
     "@unocss/reset": "^66.6.0",
     "@xyflow/react": "^12.10.0",
     "clsx": "^2.1.1",

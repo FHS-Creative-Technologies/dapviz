@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@dagrejs/dagre':
+        specifier: ^2.0.4
+        version: 2.0.4
       '@unocss/reset':
         specifier: ^66.6.0
         version: 66.6.0
@@ -124,6 +127,12 @@ packages:
   '@babel/types@7.29.0':
     resolution: {integrity: sha512-LwdZHpScM4Qz8Xw2iKSzS+cfglZzJGvofQICy7W7v4caru4EaAmyUuO6BGrbyQ2mYV11W0U8j5mBhd14dd3B0A==}
     engines: {node: '>=6.9.0'}
+
+  '@dagrejs/dagre@2.0.4':
+    resolution: {integrity: sha512-J6vCWTNpicHF4zFlZG1cS5DkGzMr9941gddYkakjrg3ZNev4bbqEgLHFTWiFrcJm7UCRu7olO3K6IRDd9gSGhA==}
+
+  '@dagrejs/graphlib@3.0.4':
+    resolution: {integrity: sha512-HxZ7fCvAwTLCWCO0WjDkzAFQze8LdC6iOpKbetDKHIuDfIgMlIzYzqZ4nxwLlclQX+3ZVeZ1K2OuaOE2WWcyOg==}
 
   '@epic-web/invariant@1.0.0':
     resolution: {integrity: sha512-lrTPqgvfFQtR/eY/qkIzp98OGdNJu0m5ji3q/nJI8v3SXkRKEnWiOxMmbvcSoAIzv/cGiuvRy57k4suKQSAdwA==}
@@ -1596,6 +1605,12 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
+
+  '@dagrejs/dagre@2.0.4':
+    dependencies:
+      '@dagrejs/graphlib': 3.0.4
+
+  '@dagrejs/graphlib@3.0.4': {}
 
   '@epic-web/invariant@1.0.0': {}
 
