@@ -6,7 +6,7 @@ const Button = ({ className, ...props }: ComponentProps<"button">) => (
   <button
     className={clsx(
       className,
-      "text-sm cursor-pointer bg-neutral-800 px-3 py-1 first:rounded-l last:rounded-r font-sans",
+      "text-sm cursor-pointer bg-white hover:bg-neutral-100 dark:bg-neutral-800 dark:hover:bg-neutral-700 px-3 py-1 first:rounded-l last:rounded-r font-sans",
     )}
     {...props}
   />
@@ -26,7 +26,7 @@ const Controls = ({
 
   return (
     <div className="flex justify-center absolute top-0 inset-x-0 p-4 gap-8 pointer-events-none">
-      <div className="flex flex-row gap-px bg-neutral-500 rounded pointer-events-auto">
+      <div className="flex flex-row gap-px bg-neutral-300 dark:bg-neutral-500 rounded pointer-events-auto shadow">
         <Button onClick={request(DapvizRequest.Step)}>Step</Button>
         <Button onClick={request(DapvizRequest.StepIn)}>Step In</Button>
         <Button onClick={request(DapvizRequest.StepOut)}>Step Out</Button>
@@ -34,7 +34,7 @@ const Controls = ({
       <select
         defaultValue={currentThread}
         onChange={(e) => setCurrentThread(+e.target.value)}
-        className="text-sm pointer-events-auto cursor-pointer bg-neutral-800 px-3 py-1 rounded font-sans"
+        className="text-sm pointer-events-auto cursor-pointer bg-white hover:bg-neutral-100 dark:bg-neutral-800 dark:hover:bg-neutral-700 px-3 py-1 rounded shadow"
       >
         {programState.threads.map((thread, i) => (
           <option key={i} value={i}>
