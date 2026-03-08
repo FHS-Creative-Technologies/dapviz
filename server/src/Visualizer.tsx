@@ -16,7 +16,7 @@ import { HeapVariable, StackFrame, ThreadInfo, Variable } from "./DapvizProvider
 
 import "@xyflow/react/dist/style.css";
 import { useTheme } from "./ThemeProvider";
-import { PropsWithChildren, useEffect } from "react";
+import { ComponentProps, PropsWithChildren, useEffect } from "react";
 import clsx from "clsx";
 
 import dagre from "@dagrejs/dagre"
@@ -25,49 +25,51 @@ type StackFrameNode = Node<StackFrame, "stackFrame">;
 type HeapVariableNode = Node<HeapVariable, "heapVariable">;
 type SourceNode = Node<{ source: [string, string, number] }, "source">;
 
-const BaseNode = ({ children }: PropsWithChildren) => (
-  <div className="bg-white text-black dark:bg-neutral-800 dark:text-white p-3 drop-shadow-md dark:drop-shadow-none rounded-lg flex flex-col">
-    {children}
-  </div>
+const BaseNode = (props: ComponentProps<"div">) => (
+  <div {...props} className={clsx("bg-white text-black dark:bg-neutral-800 dark:text-white p-3 drop-shadow-md dark:drop-shadow-none rounded-lg flex flex-col", props)} />
 );
 
 const BaseNodeHeader = ({ children }: PropsWithChildren) => (
-  <h2 className="font-medium italic">{children}</h2>
+  <h2 className="font-bold italic truncate pb-2">{children}</h2>
 );
 
 const VariableListComponent = ({ variables }: { variables: Variable[] }) => {
   return (
-    <ul className="mt-2">
-      {variables.map((variable) => (
-        <li
-          className="relative text-sm flex flex-row justify-between items-center"
-          key={variable.name}
-        >
-          <span>{variable.name}</span>
-          <span className="font-mono">
-            {isHeapVariable(variable) ? (
-              <span className="font-mono ml-1 text-xs text-neutral-300 dark:text-neutral-600">
-                {variable.address}
-                <Handle
-                  className="absolute right-0 -mr-3"
-                  type="source"
-                  position={Position.Right}
-                  id={`out-${variable.name}-${variable.reference}`}
-                />
-              </span>
-            ) : (
-              variable.value
-            )}
-          </span>
-        </li>
-      ))}
+    <ul>
+      {variables.map((variable) => {
+        const lastDelimiter = variable.name.lastIndexOf(".");
+        const variableName = variable.name.substring(lastDelimiter + 1);
+
+        return (
+          <li
+            className="relative text-sm flex gap-2 flex-row justify-between items-center"
+            key={variable.name}
+          >
+            <span className="italic truncate">{variableName}</span>
+            <span className="font-mono">
+              {isHeapVariable(variable) ? (
+                <span className="font-mono ml-1 text-xs text-neutral-300 dark:text-neutral-600">
+                  {variable.address}
+                  <Handle
+                    className="absolute right-0 -mr-3"
+                    type="source"
+                    position={Position.Right}
+                    id={`out-${variable.name}-${variable.reference}`} />
+                </span>
+              ) : (
+                variable.value
+              )}
+            </span>
+          </li>
+        );
+      })}
     </ul>
   );
 };
 
 export const StackFrameNodeComponent = (props: NodeProps<StackFrameNode>) => {
   return (
-    <BaseNode>
+    <BaseNode className="w-80">
       <BaseNodeHeader>{props.data.function}</BaseNodeHeader>
       <VariableListComponent variables={props.data.scopes.flatMap((scope) => scope.variables)} />
     </BaseNode>
@@ -75,10 +77,13 @@ export const StackFrameNodeComponent = (props: NodeProps<StackFrameNode>) => {
 };
 
 export const HeapVariableNodeCompenent = (props: NodeProps<HeapVariableNode>) => {
+  const lastDelimiter = props.data.type.lastIndexOf(".");
+  const typeName = props.data.type.substring(lastDelimiter + 1);
+
   return (
-    <BaseNode>
+    <BaseNode className="max-w-80">
       <Handle type="target" position={Position.Left} id="in" />
-      <BaseNodeHeader>{props.data.type}</BaseNodeHeader>
+      <BaseNodeHeader>{typeName}</BaseNodeHeader>
       <VariableListComponent variables={props.data.fields} />
     </BaseNode>
   );
@@ -114,15 +119,26 @@ const nodeTypes = {
 const isStackVariable = (variable: Variable) => variable.reference == 0;
 const isHeapVariable = (variable: Variable) => !isStackVariable(variable);
 
+const calculateNodeHeight = (variableCount: number) => {
+  return 16 + // header
+    8 + // margin
+    20 * variableCount + // variables
+    24; // padding
+  ;
+};
+
 const buildGraph = (thread: ThreadInfo, heapVariables: [HeapVariable]): [Node[], Edge[]] => {
   const nodes: Node[] = [];
   const edges: Edge[] = [];
 
-  const stackFrameNodes: Node[] = thread.stack_frames.map((stackFrame, i) => {
-    const stackFrameId = `stackframe-${stackFrame.id}`;
+  let nextStackFramePosition = 0;
 
-    for (const refVar of stackFrame.scopes
-      .flatMap((scope) => scope.variables)
+  const stackFrameNodes: Node[] = thread.stack_frames.map(stackFrame => {
+    const stackFrameId = `stackframe-${stackFrame.id}`;
+    const allVariables = stackFrame.scopes
+      .flatMap((scope) => scope.variables);
+
+    for (const refVar of allVariables
       .filter((variable) => variable.reference != 0)) {
       edges.push({
         id: `${stackFrameId}-${refVar.name}-${refVar.reference}`,
@@ -133,14 +149,20 @@ const buildGraph = (thread: ThreadInfo, heapVariables: [HeapVariable]): [Node[],
       });
     }
 
+    const width = 280;
+    const height = calculateNodeHeight(allVariables.length);
+
+    const yPosition = nextStackFramePosition;
+    nextStackFramePosition += height + 32;
+
     // TODO: calculate size so next can be positioned well
     return {
       id: stackFrameId,
-      position: { x: 32, y: 32 + 172 * i },
+      position: { x: 0, y: yPosition },
       draggable: false,
       type: "stackFrame",
       data: stackFrame,
-      style: { width: 256 },
+      style: { width, height },
     };
   });
 
@@ -162,6 +184,7 @@ const buildGraph = (thread: ThreadInfo, heapVariables: [HeapVariable]): [Node[],
       position: { x: 0, y: 0 },
       type: "heapVariable",
       data: variable,
+      style: { height: calculateNodeHeight(variable.fields.length) },
     };
   });
 
@@ -170,7 +193,7 @@ const buildGraph = (thread: ThreadInfo, heapVariables: [HeapVariable]): [Node[],
 
   heapNodes.forEach((node) => {
     // TODO: calculate size so layouting works well
-    dagreGraph.setNode(node.id, { width: 400, height: 300 });
+    dagreGraph.setNode(node.id, { width: 280 + 48, height: node.style?.height });
   });
 
   edges.forEach((edge) => {
