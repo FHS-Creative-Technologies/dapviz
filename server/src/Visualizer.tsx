@@ -239,12 +239,14 @@ const Visualizer = ({
   useEffect(() => {
     const [newNodes, newEdges] = buildGraph(thread, heapVariables);
 
-    newNodes.push({
-      id: "source",
-      type: "source",
-      position: { x: -800, y: 0 },
-      data: { source: currentSourceFile },
-    });
+    if (import.meta.env.DEV) {
+      newNodes.push({
+        id: "source",
+        type: "source",
+        position: { x: -800, y: 0 },
+        data: { source: currentSourceFile },
+      });
+    }
 
     setNodes(newNodes);
     setEdges(newEdges);
