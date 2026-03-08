@@ -9,7 +9,8 @@
             "type": "dotnet",
             "request": "launch",
             "projectPath": "${workspaceFolder}/csharp.csproj",
-            "debugServer": 4711
+            // connect to different debug server
+            // "debugServer": 4711
         }
     ]
 }
