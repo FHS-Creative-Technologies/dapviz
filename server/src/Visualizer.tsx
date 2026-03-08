@@ -256,6 +256,8 @@ const Visualizer = ({
     <>
       <ReactFlow
         proOptions={{ hideAttribution: true }}
+        fitView
+        minZoom={0.25}
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}
