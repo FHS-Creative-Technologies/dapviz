@@ -170,7 +170,7 @@ impl DapStateHandler for QueryVariables {
 
         match next_requested {
             None => Some(WaitForUserInput.into()),
-            Some(..) if self.depth > 10 => {
+            Some(..) if self.depth > 100 => {
                 tracing::warn!("Recursive variable query depth limit reached");
                 Some(WaitForUserInput.into())
             }
