@@ -95,7 +95,7 @@ export const SourceNodeComponent = (props: NodeProps<SourceNode>) => {
       <div className="font-mono text-xs mt-4">
         {lines.map((line, i) => (
           <pre key={i} className={clsx(i + 1 == currentLine && "bg-yellow/30")}>
-            <span className="mr-2">{String(i + 1).padStart(maxDigits)}</span> {line}
+            <span className="mr-2 text-neutral-500">{String(i + 1).padStart(maxDigits)}</span> {line}
           </pre>
         ))}
       </div>
