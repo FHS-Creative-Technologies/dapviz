@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use serde::Serialize;
 
@@ -36,7 +36,7 @@ impl From<&DapContext> for VisualizationState {
             current_source_file: None,
         };
 
-        let mut heap_variables = HashMap::<i64, (VariableInfoData, Vec<VariableInfoData>)>::new();
+        let mut heap_variables = BTreeMap::<i64, (VariableInfoData, Vec<VariableInfoData>)>::new();
 
         for thread in visualization_state.threads.iter_mut() {
             let Some(stack_frames) = thread.stack_frames.as_mut() else {
