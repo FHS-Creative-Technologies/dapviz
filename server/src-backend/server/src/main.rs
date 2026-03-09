@@ -73,11 +73,11 @@ impl TryFrom<&LaunchInfo> for DapLaunchInfo {
             .context("debugger path does not exist")?;
 
         Ok(DapLaunchInfo {
-            executable_path: full_executable_path
+            executable_path: dunce::simplified(&full_executable_path)
                 .to_str()
                 .context("executable path should be valid utf-8")?
                 .into(),
-            debugger_path: full_debugger_path
+            debugger_path: dunce::simplified(&full_debugger_path)
                 .to_str()
                 .context("debugger path should be valid utf-8")?
                 .into(),

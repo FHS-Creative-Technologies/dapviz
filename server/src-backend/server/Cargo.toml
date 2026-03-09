@@ -22,4 +22,5 @@ dirs = "6.0.0"
 reqwest = { version = "0.13.2", default-features = false, features = ["charset", "http2", "system-proxy", "json", "rustls"] }
 async-trait = "0.1.89"
 itertools = "0.14.0"
+dunce = "1.0.5"
 

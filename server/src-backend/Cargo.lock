@@ -397,6 +397,7 @@ dependencies = [
  "clap",
  "dap-types",
  "dirs",
+ "dunce",
  "enum_dispatch",
  "itertools",
  "reqwest",
