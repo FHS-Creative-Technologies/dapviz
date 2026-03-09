@@ -1,15 +1,11 @@
-use std::{net::Ipv4Addr, ops::DerefMut, sync::atomic::AtomicUsize, time::Duration};
+use std::{ops::DerefMut, process::Stdio, sync::atomic::AtomicUsize};
 
 use anyhow::Context;
-use backoff::{ExponentialBackoffBuilder, future::retry};
 use bytes::Bytes;
 use dap_types::types::{ProtocolMessage, RequestArguments};
 use tokio::{
     io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader},
-    net::{
-        TcpStream,
-        tcp::{OwnedReadHalf, OwnedWriteHalf},
-    },
+    process::{ChildStdin, ChildStdout},
 };
 
 use crate::{
@@ -30,73 +26,47 @@ pub struct DapClient {
 }
 
 struct DapProcess {
-    // not directly used, but will kill the child process on drop
     _process: tokio::process::Child,
-    tcp_read: tokio::sync::Mutex<OwnedReadHalf>,
-    tcp_write: tokio::sync::Mutex<OwnedWriteHalf>,
-
+    stdin: tokio::sync::Mutex<ChildStdin>,
+    stdout: tokio::sync::Mutex<BufReader<ChildStdout>>,
     sequence_id: AtomicUsize,
 }
 
 impl DapProcess {
     async fn start(launch_info: &DapLaunchInfo) -> anyhow::Result<Self> {
-        const PORT: u16 = 4711;
-
         let mut command = match launch_info.debug_adapter {
             DebugAdapter::NetCoreDbg => {
                 let mut command = tokio::process::Command::new(&launch_info.debugger_path);
-                command.args(["--interpreter=vscode", &format!("--server={PORT}")]);
-
+                command.arg("--interpreter=vscode");
                 command
             }
         };
 
-        command.kill_on_drop(true);
+        command
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            // forward error logs of debug adapter
+            .stderr(Stdio::inherit())
+            .kill_on_drop(true);
 
-        let child = command.spawn()?;
+        let mut child = command.spawn()?;
 
-        // give the process some initial time to spawn
-        tokio::time::sleep(Duration::from_millis(25)).await;
+        let stdin = child
+            .stdin
+            .take()
+            .context("child process did not have a stdin handle")?;
 
-        const RETRY_INTERVAL_MS: u64 = 125;
-        const RETRY_MULTIPLIER: u64 = 2;
-        const RETRY_COUNT: u32 = 5;
+        let stdout = child
+            .stdout
+            .take()
+            .context("child process did not have a stdout handle")?;
 
-        let (read, write) = retry(
-            ExponentialBackoffBuilder::default()
-                .with_initial_interval(Duration::from_millis(RETRY_INTERVAL_MS))
-                .with_multiplier(RETRY_MULTIPLIER as f64)
-                .with_randomization_factor(0.0)
-                .with_max_elapsed_time(Some(Duration::from_millis(
-                    RETRY_INTERVAL_MS * RETRY_MULTIPLIER.pow(RETRY_COUNT - 1),
-                )))
-                .build(),
-            || async {
-                if child.id().is_none() {
-                    return Err(backoff::Error::Permanent(anyhow::anyhow!(
-                        "dap server did not successfully start"
-                    )));
-                }
-
-                let split = TcpStream::connect((Ipv4Addr::LOCALHOST, PORT))
-                    .await
-                    .context("tcp connection to dap server could not be initialized")
-                    .map_err(backoff::Error::transient)?
-                    .into_split();
-
-                Ok(split)
-            },
-        )
-        .await?;
-
-        let process = DapProcess {
+        Ok(DapProcess {
             _process: child,
-            tcp_read: read.into(),
-            tcp_write: write.into(),
+            stdin: stdin.into(),
+            stdout: BufReader::new(stdout).into(),
             sequence_id: 1.into(),
-        };
-
-        Ok(process)
+        })
     }
 
     async fn send(&self, requests: &[RequestArguments]) -> anyhow::Result<()> {
@@ -123,8 +93,9 @@ impl DapProcess {
 
         let bytes = Bytes::from_iter(messages);
 
-        let mut tcp_write = self.tcp_write.lock().await;
-        tcp_write.write_all(&bytes).await?;
+        let mut stdin = self.stdin.lock().await;
+        stdin.write_all(&bytes).await?;
+        stdin.flush().await?;
 
         Ok(())
     }
@@ -132,28 +103,27 @@ impl DapProcess {
     async fn receive(&self) -> anyhow::Result<Vec<ProtocolMessage>> {
         let mut messages = Vec::new();
 
-        let mut tcp_stream = self.tcp_read.lock().await;
-        let mut reader = BufReader::new(tcp_stream.deref_mut());
+        let mut stdout = self.stdout.lock().await;
+        let reader = stdout.deref_mut();
 
-        // while there are messages in the tcp stream
         loop {
             let mut line_buffer = String::new();
 
             let content_length = {
                 let bytes_read = reader.read_line(&mut line_buffer).await?;
-                anyhow::ensure!(bytes_read != 0, "tcp stream closed");
+                anyhow::ensure!(bytes_read != 0, "stdout stream closed");
 
                 line_buffer.truncate(line_buffer.len() - 2); // remove \r\n
 
                 line_buffer
                     .split_once("Content-Length: ")
-                    .map_or(None, |(_, length)| length.parse::<usize>().ok())
+                    .and_then(|(_, length)| length.parse::<usize>().ok())
                     .context("could not parse content length header")?
             };
 
             line_buffer.clear();
             let bytes_read = reader.read_line(&mut line_buffer).await?;
-            anyhow::ensure!(bytes_read != 0, "tcp stream closed");
+            anyhow::ensure!(bytes_read != 0, "stdout stream closed");
 
             // NOTE: a dap message can have multiple headers, but only Content-Length is required
             // and standardised. for simplicity only check for this header for now.
