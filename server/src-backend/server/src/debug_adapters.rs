@@ -160,7 +160,7 @@ impl DebugAdapterFunctions for DebugAdapterInstallDefinition {
 pub const NET_CORE_DBG_INSTALL: DebugAdapterInstallDefinition = DebugAdapterInstallDefinition {
     adapter_name: "netcoredbg",
     download: DownloadMethod::GitHubRelease {
-        repository_id: "Samsung/netcoredbg",
+        repository_id: "FHS-Creative-Technologies/netcoredbg",
         release_tag: "latest",
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         asset_name: "netcoredbg-linux-amd64.tar.gz",
@@ -169,7 +169,7 @@ pub const NET_CORE_DBG_INSTALL: DebugAdapterInstallDefinition = DebugAdapterInst
         #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
         asset_name: "netcoredbg-osx-amd64.tar.gz",
         #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-        asset_name: "netcoredbg-osx-amd64.tar.gz",
+        asset_name: "netcoredbg-osx-arm64.tar.gz",
         #[cfg(all(target_os = "windows", target_arch = "x86_64"))]
         asset_name: "netcoredbg-win64.zip",
     },
