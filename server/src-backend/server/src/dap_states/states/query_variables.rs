@@ -1,8 +1,11 @@
 use dap_types::types::{RequestArguments, ResponseBody};
 
-use crate::dap_states::{
-    dap_state::{DapState, DapStateHandler},
-    dap_state_machine::{DapContext, ProgramState, ScopeInfo, VariableInfo},
+use crate::{
+    dap_states::{
+        dap_state::{DapState, DapStateHandler},
+        dap_state_machine::{DapContext, ProgramState, ScopeInfo, VariableInfo},
+    },
+    debug_adapters::DebugAdapter,
 };
 
 use super::wait_for_user_input::WaitForUserInput;
@@ -154,9 +157,11 @@ impl DapStateHandler for QueryVariables {
                             variable
                                 .type_
                                 .as_ref()
-                                // TODO: more intelligent filtering dependent on language
-                                .map(|type_| {
-                                    type_ != "System.Reflection.TargetParameterCountException"
+                                // TODO: more intelligent filtering
+                                .map(|type_| match context.debug_adapter {
+                                    DebugAdapter::NetCoreDbg => {
+                                        type_ != "System.Reflection.TargetParameterCountException"
+                                    }
                                 })
                                 .unwrap_or(true)
                         })
