@@ -172,7 +172,6 @@ const buildGraph = (thread: ThreadInfo, heapVariables: [HeapVariable]): [Node[],
     const yPosition = nextStackFramePosition;
     nextStackFramePosition += height + 32;
 
-    // TODO: calculate size so next can be positioned well
     return {
       id: stackFrameId,
       parentId: "stackFrameGroup",
@@ -239,7 +238,6 @@ const buildGraph = (thread: ThreadInfo, heapVariables: [HeapVariable]): [Node[],
   dagreGraph.setGraph({ rankdir: "LR", align: "UL" });
 
   heapNodes.forEach((node) => {
-    // TODO: calculate size so layouting works well
     dagreGraph.setNode(node.id, { width: 280 + 48, height: node.style?.height });
   });
 
