@@ -158,12 +158,23 @@ const buildGraph = (thread: ThreadInfo, heapVariables: [HeapVariable]): [Node[],
     // TODO: calculate size so next can be positioned well
     return {
       id: stackFrameId,
+      parentId: "stackFrameGroup",
+      extent: "parent",
       position: { x: 0, y: yPosition },
       draggable: false,
       type: "stackFrame",
       data: stackFrame,
       style: { width, height },
     };
+  });
+
+  stackFrameNodes.push({
+    id: "stackFrameGroup",
+    position: { x: -32, y: -32 },
+    draggable: false,
+    type: "group",
+    data: {},
+    style: { width: 280 + 64, height: nextStackFramePosition + 32, zIndex: -1, borderRadius: "0.5rem" },
   });
 
   const heapNodes: Node[] = heapVariables.map(variable => {
