@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- if this file gets changed, we don't care about fast refresh */
 import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from "react";
 
 type Theme = "dark" | "light";
