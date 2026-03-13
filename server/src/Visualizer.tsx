@@ -16,22 +16,37 @@ import { HeapVariable, StackFrame, ThreadInfo, Variable } from "./DapvizProvider
 
 import "@xyflow/react/dist/style.css";
 import { useTheme } from "./ThemeProvider";
-import { ComponentProps, PropsWithChildren, useEffect } from "react";
+import { ComponentProps, useEffect } from "react";
 import clsx from "clsx";
 
-import dagre from "@dagrejs/dagre"
+import dagre from "@dagrejs/dagre";
 
 type StackFrameNode = Node<StackFrame, "stackFrame">;
 type HeapVariableNode = Node<HeapVariable, "heapVariable">;
 type SourceNode = Node<{ source: [string, string, number] }, "source">;
+type HeadingNode = Node<{ label: string }, "heading">;
 
 const BaseNode = (props: ComponentProps<"div">) => (
-  <div {...props} className={clsx("bg-white text-black dark:bg-neutral-800 dark:text-white p-3 drop-shadow-md dark:drop-shadow-none rounded-lg flex flex-col", props)} />
+  <div
+    {...props}
+    className={clsx(
+      "bg-white text-black dark:bg-neutral-800 dark:text-white p-3 drop-shadow-md dark:drop-shadow-none rounded-lg flex flex-col",
+      props,
+    )}
+  />
 );
 
-const BaseNodeHeader = ({ children }: PropsWithChildren) => (
-  <h2 className="font-bold italic truncate pb-2">{children}</h2>
+const BaseNodeHeader = (props: ComponentProps<"h2">) => (
+  <h2 {...props} className={clsx("font-bold italic truncate pb-2", props.className)} />
 );
+
+const HeadingNodeComponent = ({ data: { label } }: NodeProps<HeadingNode>) => {
+  return (
+    <div className="text-black dark:text-white">
+      <h1 className="font-bold text-4xl text-center">{label}</h1>
+    </div>
+  );
+};
 
 const VariableListComponent = ({ variables }: { variables: Variable[] }) => {
   return (
@@ -54,7 +69,8 @@ const VariableListComponent = ({ variables }: { variables: Variable[] }) => {
                     className="absolute right-0 -mr-3"
                     type="source"
                     position={Position.Right}
-                    id={`out-${variable.name}-${variable.reference}`} />
+                    id={`out-${variable.name}-${variable.reference}`}
+                  />
                 </span>
               ) : (
                 variable.value
@@ -102,7 +118,8 @@ export const SourceNodeComponent = (props: NodeProps<SourceNode>) => {
       <div className="font-mono text-xs mt-4">
         {lines.map((line, i) => (
           <pre key={i} className={clsx(i + 1 == currentLine && "bg-yellow/30")}>
-            <span className="mr-2 text-neutral-500">{String(i + 1).padStart(maxDigits)}</span> {line}
+            <span className="mr-2 text-neutral-500">{String(i + 1).padStart(maxDigits)}</span>{" "}
+            {line}
           </pre>
         ))}
       </div>
@@ -114,17 +131,19 @@ const nodeTypes = {
   stackFrame: StackFrameNodeComponent,
   heapVariable: HeapVariableNodeCompenent,
   source: SourceNodeComponent,
+  heading: HeadingNodeComponent,
 };
 
 const isStackVariable = (variable: Variable) => variable.reference == 0;
 const isHeapVariable = (variable: Variable) => !isStackVariable(variable);
 
 const calculateNodeHeight = (variableCount: number) => {
-  return 16 + // header
+  return (
+    16 + // header
     8 + // margin
     20 * variableCount + // variables
-    24; // padding
-  ;
+    24
+  ); // padding
 };
 
 const buildGraph = (thread: ThreadInfo, heapVariables: [HeapVariable]): [Node[], Edge[]] => {
@@ -133,13 +152,11 @@ const buildGraph = (thread: ThreadInfo, heapVariables: [HeapVariable]): [Node[],
 
   let nextStackFramePosition = 0;
 
-  const stackFrameNodes: Node[] = thread.stack_frames.map(stackFrame => {
+  const stackFrameNodes: Node[] = thread.stack_frames.map((stackFrame) => {
     const stackFrameId = `stackframe-${stackFrame.id}`;
-    const allVariables = stackFrame.scopes
-      .flatMap((scope) => scope.variables);
+    const allVariables = stackFrame.scopes.flatMap((scope) => scope.variables);
 
-    for (const refVar of allVariables
-      .filter((variable) => variable.reference != 0)) {
+    for (const refVar of allVariables.filter((variable) => variable.reference != 0)) {
       edges.push({
         id: `${stackFrameId}-${refVar.name}-${refVar.reference}`,
         source: stackFrameId,
@@ -160,7 +177,7 @@ const buildGraph = (thread: ThreadInfo, heapVariables: [HeapVariable]): [Node[],
       id: stackFrameId,
       parentId: "stackFrameGroup",
       extent: "parent",
-      position: { x: 0, y: yPosition },
+      position: { x: 32, y: yPosition + 32 },
       draggable: false,
       type: "stackFrame",
       data: stackFrame,
@@ -169,15 +186,34 @@ const buildGraph = (thread: ThreadInfo, heapVariables: [HeapVariable]): [Node[],
   });
 
   stackFrameNodes.push({
+    id: "stackHeader",
+    position: { x: 32, y: -48 },
+    draggable: false,
+    type: "heading",
+    data: {
+      label: "Stack",
+    },
+    style: { width: 280 },
+  });
+
+  stackFrameNodes.push({
     id: "stackFrameGroup",
-    position: { x: -32, y: -32 },
+    position: { x: 0, y: 0 },
     draggable: false,
     type: "group",
     data: {},
-    style: { width: 280 + 64, height: nextStackFramePosition + 32, zIndex: -1, borderRadius: "0.5rem" },
+    style: {
+      width: 280 + 64,
+      backgroundColor: "#99999912",
+      height: nextStackFramePosition + 32,
+      zIndex: -1,
+      borderRadius: "0.5rem",
+    },
   });
 
-  const heapNodes: Node[] = heapVariables.map(variable => {
+  stackFrameNodes.reverse();
+
+  const heapNodes: Node[] = heapVariables.map((variable) => {
     const referenceId = `ref-${variable.reference}`;
 
     for (const refVar of variable.fields.filter((variable) => variable.reference != 0)) {
@@ -223,7 +259,7 @@ const buildGraph = (thread: ThreadInfo, heapVariables: [HeapVariable]): [Node[],
       position: {
         x: 200 + layoutedNode.x,
         y: layoutedNode.y,
-      }
+      },
     };
   });
 
@@ -283,8 +319,7 @@ const Visualizer = ({
         </Controls>
       </ReactFlow>
 
-      {
-        (import.meta.env.DEV) &&
+      {import.meta.env.DEV && (
         <>
           <details className="text-xs font-mono px-4 max-h-screen bg-black/80 absolute top-0 left-0 text-white overflow-y-auto">
             <summary>Debug</summary>
@@ -314,7 +349,7 @@ const Visualizer = ({
             </details>
           </details>
         </>
-      }
+      )}
     </>
   );
 };
