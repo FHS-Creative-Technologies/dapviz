@@ -103,13 +103,6 @@ export default async (context: vscode.ExtensionContext) => {
         return;
     }
 
-    vscode.commands.executeCommand(
-        "simpleBrowser.api.open",
-        `http://localhost:${PORT}`,
-        {
-            viewColumn: vscode.ViewColumn.Beside
-        });
-
     const api = `ws://localhost:${PORT}/api/events`;
 
     await promisify(setTimeout)(1000);
@@ -120,6 +113,16 @@ export default async (context: vscode.ExtensionContext) => {
 
     ws.on("error", (e) => {
         vscode.window.showErrorMessage("dapviz error:", JSON.stringify(e));
+    });
+
+    ws.on("open", () => {
+        const panel = vscode.window.createWebviewPanel(
+            'dapvizWebview',
+            'dapviz',
+            vscode.ViewColumn.Beside,
+            { enableScripts: true }
+        );
+        panel.webview.html = `<iframe src="http://localhost:${PORT}" style="width:100%;height:100vh;border:none;"/>`;
     });
 
     ws.on("message", async (data) => {
