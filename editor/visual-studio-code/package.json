@@ -3,7 +3,7 @@
   "displayName": "dapviz",
   "publisher": "fhs-ct",
   "description": "Visualizes running programs",
-  "version": "0.0.0",
+  "version": "0.0.2",
   "repository": "https://github.com/FHS-Creative-Technologies/dapviz",
   "engines": {
     "vscode": "^1.97.0"
