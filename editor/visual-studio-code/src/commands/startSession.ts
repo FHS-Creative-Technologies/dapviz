@@ -95,7 +95,7 @@ export default async (context: vscode.ExtensionContext) => {
             name: "dapviz",
         });
 
-        terminal.sendText(`RUST_LOG="debug" LOG_OUTPUT="stderr" ${dapvizPath} launch -p ${PORT} --debug-adapter ${debugAdapter} "${executablePath}"`);
+        terminal.sendText(`${dapvizPath} launch -p ${PORT} --debug-adapter ${debugAdapter} "${executablePath}"`);
         terminal.show(true);
 
     } catch (e) {
