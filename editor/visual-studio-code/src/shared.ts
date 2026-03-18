@@ -62,7 +62,7 @@ export const ensureDapvizInstall = async (context: vscode.ExtensionContext): Pro
     const executablePath = getExecutablePath(context, os);
 
     if (!existsSync(executablePath)) {
-        await vscode.commands.executeCommand("dapviz.downloadBinaries");
+        await vscode.commands.executeCommand("dapviz.downloadDapviz");
     }
 
     return executablePath;
