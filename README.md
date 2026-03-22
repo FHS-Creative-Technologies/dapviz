@@ -9,7 +9,7 @@ it provides a clear representation of stack and heap variables and their relatio
 ## Installation
 
 The recommended way to use dapviz is through editor plugins:
-- [Visual Studio Code](.)
+- [Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=fhs-ct.dapviz)
 
 Alternatively, dapviz can be used as a standalone program. Download the latest version from the 
 [releases section](https://github.com/FHS-Creative-Technologies/dapviz/releases)
