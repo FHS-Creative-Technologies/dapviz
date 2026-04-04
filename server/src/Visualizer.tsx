@@ -196,6 +196,17 @@ const buildGraph = (thread: ThreadInfo, heapVariables: [HeapVariable]): [Node[],
   });
 
   stackFrameNodes.push({
+    id: "heapHeader",
+    position: { x: 376, y: -48 },
+    draggable: false,
+    type: "heading",
+    data: {
+      label: "Heap",
+    },
+    style: { width: 280 },
+  });
+
+  stackFrameNodes.push({
     id: "stackFrameGroup",
     position: { x: 0, y: 0 },
     draggable: false,
