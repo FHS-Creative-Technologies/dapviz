@@ -26,7 +26,7 @@ const Controls = ({
 
   return (
     <div className="flex justify-center absolute top-0 inset-x-0 p-4 gap-8 pointer-events-none">
-      <Button className="rounded pointer-events-auto" onClick={() => window.location.reload()}>Stack Gone? :(</Button>
+      <Button className="rounded pointer-events-auto" onClick={() => window.location.reload()}>Reload Visualization</Button>
       <div className="flex flex-row gap-px bg-neutral-300 dark:bg-neutral-500 rounded pointer-events-auto shadow">
         <Button className="rounded-l" onClick={request(DapvizRequest.Step)}>Step</Button>
         <Button onClick={request(DapvizRequest.StepIn)}>Step In</Button>
