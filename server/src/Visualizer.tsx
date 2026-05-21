@@ -324,7 +324,7 @@ const Visualizer = ({
       >
         <Background variant={BackgroundVariant.Dots} />
         <Controls>
-          <ControlButton onClick={toggleTheme}>T</ControlButton>
+          <ControlButton onClick={toggleTheme}>{theme === "dark" ? "☀️" : "🌙"}</ControlButton>
         </Controls>
       </ReactFlow>
 
