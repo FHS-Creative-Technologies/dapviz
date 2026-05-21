@@ -72,3 +72,15 @@ export const getSupportedDebugAdapters = async (dapvizPath: string): Promise<str
     const commandResult = await execAsync(`${dapvizPath} list-debug-adapters`);
     return commandResult.stdout.split(/\r?\n|\r/).filter(line => line.length > 0);
 };
+
+export const userPickDebugAdapter = async (dapvizPath: string): Promise<string | undefined> => {
+    const debugAdapters = await getSupportedDebugAdapters(dapvizPath);
+
+    if (debugAdapters.length === 1) {
+        return debugAdapters[0];
+    }
+
+    return await vscode.window.showQuickPick(await getSupportedDebugAdapters(dapvizPath), {
+        placeHolder: "Select the debug adapter"
+    });
+};

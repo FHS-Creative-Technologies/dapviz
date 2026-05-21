@@ -1,12 +1,9 @@
 import * as vscode from "vscode";
-import { ensureDapvizInstall, execAsync, getSupportedDebugAdapters } from "../shared";
+import { ensureDapvizInstall, execAsync, getSupportedDebugAdapters, userPickDebugAdapter } from "../shared";
 
 export default async (context: vscode.ExtensionContext) => {
     const dapvizPath = await ensureDapvizInstall(context);
-
-    const selection = await vscode.window.showQuickPick(await getSupportedDebugAdapters(dapvizPath), {
-        placeHolder: "Select the debug adapter to install"
-    });
+    const selection = await userPickDebugAdapter(dapvizPath);
 
     if (selection) {
         vscode.window.withProgress({

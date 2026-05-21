@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { ensureDapvizInstall, getSupportedDebugAdapters } from '../shared';
+import { ensureDapvizInstall, getSupportedDebugAdapters, userPickDebugAdapter } from '../shared';
 import WebSocket from 'ws';
 import { promisify } from 'util';
 import { ExtensionState, getExtensionState, setExtensionState } from '../extension';
@@ -67,10 +67,7 @@ export default async (context: vscode.ExtensionContext) => {
     }
 
     const dapvizPath = await ensureDapvizInstall(context);
-
-    const debugAdapter = await vscode.window.showQuickPick(await getSupportedDebugAdapters(dapvizPath), {
-        placeHolder: "Select the debug adapter use"
-    });
+    const debugAdapter = await userPickDebugAdapter(dapvizPath);
 
     if (!debugAdapter) {
         return;
