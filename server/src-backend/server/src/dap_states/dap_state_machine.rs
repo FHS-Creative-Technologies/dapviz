@@ -128,10 +128,7 @@ impl ProgramState {
             })
             .collect::<Vec<_>>();
 
-        Self {
-            threads,
-            ..Default::default()
-        }
+        Self { threads }
     }
 }
 

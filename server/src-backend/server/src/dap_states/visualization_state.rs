@@ -31,7 +31,7 @@ impl From<&DapContext> for VisualizationState {
                 .program_state
                 .as_ref()
                 .map(|state| state.threads.clone())
-                .unwrap_or_else(|| Vec::new()),
+                .unwrap_or_default(),
             heap_variables: Vec::new(),
             current_source_file: None,
         };
@@ -106,7 +106,7 @@ impl From<&DapContext> for VisualizationState {
                 .threads
                 .iter()
                 .find_map(|thread| {
-                    (thread.id == active_thread_id).then(|| thread.stack_frames.as_ref())
+                    (thread.id == active_thread_id).then_some(thread.stack_frames.as_ref())
                 })
                 .flatten();
 
