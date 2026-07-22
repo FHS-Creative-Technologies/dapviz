@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
-import { ensureDapvizInstall, getSupportedDebugAdapters, userPickDebugAdapter } from '../shared';
+import { ensureDapvizInstall, userPickDebugAdapter } from '../shared';
 import WebSocket from 'ws';
 import { promisify } from 'util';
 import { ExtensionState, getExtensionState, setExtensionState } from '../extension';
+import pRetry, { AbortError } from 'p-retry';
 
 // TODO: make this configurable in extension settings
 const PORT = 5173;
@@ -60,6 +61,29 @@ const highlightLine = async (filePath: string, line: number) => {
     };
 };
 
+const createWebsocket = (url: string) => new Promise<WebSocket>((res, rej) => {
+    const ws = new WebSocket(url);
+
+    const onOpen = () => {
+        cleanup();
+        res(ws);
+    };
+
+    const onError = (err: Error) => {
+        cleanup();
+        ws.terminate();
+        rej(err);
+    };
+
+    const cleanup = () => {
+        ws.off("open", onOpen);
+        ws.off("error", onError);
+    };
+
+    ws.once("open", onOpen);
+    ws.once("error", onError);
+});
+
 export default async (context: vscode.ExtensionContext) => {
     if (getExtensionState().state === ExtensionState.Running) {
         vscode.window.showErrorMessage("Can't start new session, already running");
@@ -100,27 +124,38 @@ export default async (context: vscode.ExtensionContext) => {
         return;
     }
 
-    const api = `ws://localhost:${PORT}/api/events`;
-
     await promisify(setTimeout)(1000);
 
-    const ws = new WebSocket(api);
+    // don't retry establishing websocket connection to dapviz if it isn't running anymore
+    const abort = new AbortController();
+    vscode.window.onDidEndTerminalShellExecution((e) => {
+        console.log("Command finished", e);
+        if (e.terminal === terminal && e.exitCode !== 0) {
+            abort.abort("dapviz server failed to start");
+        }
+    });
+    vscode.window.onDidCloseTerminal((t) => {
+        if (t === terminal) {
+            abort.abort("terminal closed");
+        }
+    });
+
+    const api = `ws://localhost:${PORT}/api/events`;
+    const ws = await pRetry(
+        () => {
+            if (abort.signal.aborted) {
+                throw new AbortError(abort.signal.reason);
+            }
+
+            return createWebsocket(api);
+        },
+        {
+            retries: 6,
+            minTimeout: 500,
+            factor: 1.5,
+        });
 
     let clearPreviousHighlight: (() => void) | null = null;
-
-    ws.on("error", (e) => {
-        vscode.window.showErrorMessage("dapviz error:", JSON.stringify(e));
-    });
-
-    ws.on("open", () => {
-        const panel = vscode.window.createWebviewPanel(
-            'dapvizWebview',
-            'dapviz',
-            vscode.ViewColumn.Beside,
-            { enableScripts: true }
-        );
-        panel.webview.html = `<iframe src="http://localhost:${PORT}" style="width:100%;height:100vh;border:none;"/>`;
-    });
 
     ws.on("message", async (data) => {
         const json = JSON.parse(data.toString());
@@ -140,9 +175,24 @@ export default async (context: vscode.ExtensionContext) => {
         }
     });
 
+    ws.on("error", (e) => {
+        vscode.window.showErrorMessage("dapviz error:", JSON.stringify(e));
+    });
+
     ws.on("close", () => {
         vscode.commands.executeCommand('dapviz.endSession');
     });
+
+    // signal webserver that we're ready
+    ws.send("ready");
+
+    const panel = vscode.window.createWebviewPanel(
+        'dapvizWebview',
+        'dapviz',
+        vscode.ViewColumn.Beside,
+        { enableScripts: true }
+    );
+    panel.webview.html = `<iframe src="http://localhost:${PORT}" style="width:100%;height:100vh;border:none;"/>`;
 
     setExtensionState({ state: ExtensionState.Running, terminal, ws, clearHighlight: () => { } });
 };

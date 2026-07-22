@@ -69,20 +69,6 @@ const DapvizProvider = ({
   useEffect(() => {
     const ws = new WebSocket(`ws://${location.host}/api/events`);
 
-    // NOTE: need to use the react state set function overload to set react state to a function
-    // https://stackoverflow.com/a/55621325/7482275
-    ws.addEventListener("open", () =>
-      setRequestFunction(() => (request: DapvizRequest, threadId: number) => {
-        const data = new ArrayBuffer(9);
-        const view = new DataView(data);
-
-        view.setBigInt64(0, BigInt(threadId), true);
-        view.setInt8(8, request);
-
-        ws.send(data);
-      }),
-    );
-
     ws.addEventListener("message", (e) => {
       let json;
       try {
@@ -102,6 +88,23 @@ const DapvizProvider = ({
     ws.addEventListener("close", () => {
       setRequestFunction(null);
       setVisualizationState(null);
+    });
+
+    // NOTE: need to use the react state set function overload to set react state to a function
+    // https://stackoverflow.com/a/55621325/7482275
+    ws.addEventListener("open", () => {
+      setRequestFunction(() => (request: DapvizRequest, threadId: number) => {
+        const data = new ArrayBuffer(9);
+        const view = new DataView(data);
+
+        view.setBigInt64(0, BigInt(threadId), true);
+        view.setInt8(8, request);
+
+        ws.send(data);
+      });
+
+      // signal webserver that we're ready
+      ws.send("ready");
     });
 
     return () => ws.close();

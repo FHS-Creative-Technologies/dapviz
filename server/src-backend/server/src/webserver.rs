@@ -4,7 +4,7 @@ use axum::{
     Router,
     extract::{
         State, WebSocketUpgrade,
-        ws::{Message, WebSocket},
+        ws::{Message, Utf8Bytes, WebSocket},
     },
     http::StatusCode,
     response::IntoResponse,
@@ -75,11 +75,22 @@ async fn initialize_events_websocket(
     })
 }
 
+const READY_MESSAGE: Message = Message::Text(Utf8Bytes::from_static("ready"));
+
 async fn handle_socket(
     mut socket: WebSocket,
     mut program_state: tokio::sync::watch::Receiver<VisualizationState>,
     request_sender: tokio::sync::broadcast::Sender<UserRequest>,
 ) {
+    // only start communication after websocket sends ready message
+    let Some(Ok(init_message)) = socket.recv().await else {
+        return;
+    };
+
+    if init_message != READY_MESSAGE {
+        return;
+    }
+
     loop {
         let serialized = serde_json::to_string(program_state.borrow_and_update().deref())
             .expect("ProgramState must not contain a Map with non-string keys");
